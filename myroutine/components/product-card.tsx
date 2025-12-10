@@ -1,7 +1,5 @@
 "use client"
 
-import { ShoppingCart } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
 
@@ -31,35 +29,15 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Content */}
         <div className="flex-1 p-4 flex flex-col">
-          <span className="text-xs font-semibold text-primary uppercase mb-2">{product.category}</span>
-          <h3 className="font-bold text-foreground mb-2 line-clamp-2">{product.name}</h3>
-          <p className="text-lg font-bold text-primary mb-4 mt-auto">₩{product.price.toLocaleString()}</p>
-
-          {/* Buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 bg-transparent"
-              onClick={(e) => {
-                e.preventDefault()
-                // TODO: Add to cart
-              }}
-            >
-              <ShoppingCart className="w-4 h-4 mr-1" />
-              담기
-            </Button>
-            <Button
-              size="sm"
-              className="flex-1 bg-primary hover:bg-primary/90"
-              onClick={(e) => {
-                e.preventDefault()
-                // Navigate to product detail
-              }}
-            >
-              구독하기
-            </Button>
-          </div>
+          <span className="text-xs font-semibold text-primary uppercase mb-2">
+            {product.category}
+          </span>
+          <h3 className="font-bold text-foreground mb-2 line-clamp-2">
+            {product.name}
+          </h3>
+          <p className="text-lg font-bold text-primary mt-auto">
+            ₩{product.price.toLocaleString()}
+          </p>
         </div>
       </Card>
     </Link>

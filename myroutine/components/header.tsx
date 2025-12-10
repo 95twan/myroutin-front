@@ -1,26 +1,18 @@
 "use client"
+import type React from "react"
 
-import { ShoppingCart, User, LogOut } from "lucide-react"
+import { ShoppingCart, User, LogOut, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { authApi } from "@/lib/api-client"
 
-interface HeaderProps {
-  onCartClick: () => void
-  onMyPageClick: () => void
-  onLoginClick: () => void
-}
-
-export default function Header({
-  onCartClick,
-  onMyPageClick,
-  onLoginClick,
-}: HeaderProps) {
+export default function Header() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken")
@@ -40,12 +32,17 @@ export default function Header({
     router.push("/login")
   }
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    // TODO: Navigate to search results or filter products
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold">M</span>
             </div>
@@ -55,21 +52,32 @@ export default function Header({
           </Link>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-4">
-            {/* Search (Desktop only) */}
-            <div className="hidden md:flex items-center gap-2 flex-1 max-w-sm ml-8">
+          <form
+            onSubmit={handleSearch}
+            className="hidden md:flex items-center flex-1 max-w-md mx-4"
+          >
+            <div className="relative w-full">
               <input
                 type="text"
                 placeholder="상품 검색..."
-                className="flex-1 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+              >
+                <Search className="w-4 h-4" />
+              </button>
             </div>
+          </form>
 
-            {/* Icons */}
+          {/* Right Actions */}
+          <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="icon"
-              onClick={onCartClick}
               className="text-foreground hover:text-primary"
             >
               <ShoppingCart className="w-5 h-5" />
@@ -109,6 +117,24 @@ export default function Header({
               </div>
             )}
           </div>
+        </div>
+        {/* Mobile Search */}
+        <div className="md:hidden pb-4">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="상품 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <button
+              type="submit"
+              className="p-2 text-muted-foreground hover:text-primary"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          </form>
         </div>
       </div>
     </header>
