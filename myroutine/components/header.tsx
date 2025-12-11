@@ -15,14 +15,37 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken")
-    setIsLoggedIn(!!token)
-    setIsLoading(false)
+    const syncAuthState = () => {
+      const token = localStorage.getItem("accessToken")
+      setIsLoggedIn(!!token)
+      setIsLoading(false)
+    }
+
+    syncAuthState()
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === "accessToken") {
+        syncAuthState()
+      }
+    }
+
+    const handleAuthChanged = () => {
+      syncAuthState()
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("auth-changed", handleAuthChanged)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("auth-changed", handleAuthChanged)
+    }
   }, [])
 
   const handleLogout = async () => {
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
+    window.dispatchEvent(new Event("auth-changed"))
     try {
       await authApi.logout()
     } catch (error: any) {

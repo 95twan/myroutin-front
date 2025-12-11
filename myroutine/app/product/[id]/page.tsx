@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import SubscriptionForm from "@/components/subscription-form"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
 import Link from "next/link"
 
 // Mock product data

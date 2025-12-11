@@ -21,6 +21,7 @@ export default function SignupPage() {
   // Email verification state
   const [email, setEmail] = useState("")
   const [verificationCode, setVerificationCode] = useState("")
+  const [codeRequested, setCodeRequested] = useState(false)
   const [isEmailVerified, setIsEmailVerified] = useState(false)
   const [emailError, setEmailError] = useState("")
   const [verificationError, setVerificationError] = useState("")
@@ -54,6 +55,7 @@ export default function SignupPage() {
     try {
       await authApi.sendEmailVerification(email, temporaryToken || undefined)
       alert("인증 코드가 이메일로 전송되었습니다!")
+      setCodeRequested(true)
     } catch (error: any) {
       setEmailError(error.message || "인증 코드 발송에 실패했습니다.")
       console.error(error)
@@ -73,6 +75,7 @@ export default function SignupPage() {
     try {
       await authApi.verifyEmail(email, verificationCode)
       setIsEmailVerified(true)
+      setCodeRequested(false)
     } catch (error: any) {
       setVerificationError(error.message || "인증에 실패했습니다.")
       console.error(error)
@@ -111,6 +114,7 @@ export default function SignupPage() {
       apiClient.setAccessToken(response.accessToken)
       localStorage.setItem("accessToken", response.accessToken)
       localStorage.setItem("refreshToken", response.refreshToken)
+      window.dispatchEvent(new Event("auth-changed"))
 
       // sessionStorage 정리
       sessionStorage.removeItem("temporaryToken")
@@ -173,6 +177,10 @@ export default function SignupPage() {
                     onChange={(e) => {
                       setEmail(e.target.value)
                       setEmailError("")
+                      setVerificationCode("")
+                      setVerificationError("")
+                      setIsEmailVerified(false)
+                      setCodeRequested(false)
                     }}
                     placeholder="your@email.com"
                     className="h-10 flex-1"
@@ -193,7 +201,7 @@ export default function SignupPage() {
                 )}
               </div>
 
-              {email && !isEmailVerified && (
+              {email && codeRequested && !isEmailVerified && (
                 <div>
                   <label
                     htmlFor="verification"
