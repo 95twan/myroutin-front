@@ -129,14 +129,9 @@ export default function ShopDetailPage() {
               내 상점 정보를 확인하세요
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.back()}>
-              뒤로가기
-            </Button>
-            <Link href="/dashboard?tab=shops">
-              <Button variant="outline">대시보드</Button>
-            </Link>
-          </div>
+          <Link href="/dashboard?tab=shops">
+            <Button variant="outline">상점 목록으로</Button>
+          </Link>
         </div>
 
         <Card className="p-6 md:p-8 space-y-6">

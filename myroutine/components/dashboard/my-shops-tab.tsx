@@ -19,6 +19,8 @@ export default function MyShopsTab() {
   const [shops, setShops] = useState<Shop[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
@@ -34,32 +36,36 @@ export default function MyShopsTab() {
     name: shop?.shopName || "",
   })
 
-  useEffect(() => {
-    const fetchShops = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const data: any = await shopApi.getMyShops()
-        console.log(data)
-
-        const list = Array.isArray(data?.content) ? data.content : []
-        setShops(
-          list.map((item, idx) => {
-            const normalized = normalizeShop(item)
-            return {
-              id: normalized.id || String(idx),
-              name: normalized.name || "이름 없음",
-            }
-          })
-        )
-      } catch (err: any) {
-        setError(err?.message || "상점 목록을 불러오지 못했습니다.")
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchShops = async (pageToLoad = 0) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data: any = await shopApi.getMyShops(pageToLoad, 6, "createdAt,desc")
+      const list = Array.isArray(data?.content) ? data.content : []
+      setShops(
+        list.map((item, idx) => {
+          const normalized = normalizeShop(item)
+          return {
+            id: normalized.id || String(idx),
+            name: normalized.name || "이름 없음",
+          }
+        })
+      )
+      setPage(typeof data?.number === "number" ? data.number : pageToLoad)
+      setTotalPages(
+        typeof data?.totalPages === "number" && data.totalPages > 0
+          ? data.totalPages
+          : 1
+      )
+    } catch (err: any) {
+      setError(err?.message || "상점 목록을 불러오지 못했습니다.")
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    fetchShops()
+  useEffect(() => {
+    fetchShops(0)
   }, [])
 
   const handleAddShop = async (e: React.FormEvent) => {
@@ -75,7 +81,7 @@ export default function MyShopsTab() {
           (created?.id ? String(created.id) : Date.now().toString()),
         name: normalized.name || formData.shopName,
       }
-      setShops((prev) => [...prev, safeShop])
+      await fetchShops(0)
       setFormData({
         shopName: "",
         shopEmail: "",
@@ -231,27 +237,50 @@ export default function MyShopsTab() {
           등록된 상점이 없습니다.
         </Card>
       ) : (
-        <div className="space-y-4">
-          {shops.map((shop) => (
-            <Link key={shop.id} href={`/shops/${shop.id}`} className="block">
-              <Card className="p-6 md:p-8 border-border/70 hover:shadow-lg transition-shadow cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-                    {shop.name?.[0] ?? "S"}
+        <>
+          <div className="space-y-4">
+            {shops.map((shop) => (
+              <Link key={shop.id} href={`/shops/${shop.id}`} className="block">
+                <Card className="p-6 md:p-8 border-border/70 hover:shadow-lg transition-shadow cursor-pointer">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                      {shop.name?.[0] ?? "S"}
+                    </div>
+                    <div className="flex-1 flex items-center justify-between gap-3">
+                      <h3 className="text-lg md:text-xl font-bold text-foreground">
+                        {shop.name || "이름 없음"}
+                      </h3>
+                      <span className="text-sm text-muted-foreground">
+                        상세보기
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1 flex items-center justify-between gap-3">
-                    <h3 className="text-lg md:text-xl font-bold text-foreground">
-                      {shop.name || "이름 없음"}
-                    </h3>
-                    <span className="text-sm text-muted-foreground">
-                      상세보기
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+          <div className="flex items-center justify-between pt-4">
+            <span className="text-sm text-muted-foreground">
+              페이지 {page + 1} / {totalPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => fetchShops(Math.max(0, page - 1))}
+                disabled={page === 0 || isLoading}
+              >
+                이전
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => fetchShops(Math.min(totalPages - 1, page + 1))}
+                disabled={page >= totalPages - 1 || isLoading}
+              >
+                다음
+              </Button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

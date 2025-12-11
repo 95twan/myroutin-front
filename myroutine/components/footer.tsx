@@ -14,7 +14,7 @@ export default function Footer() {
             <h4 className="font-semibold text-foreground mb-4">고객 지원</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a href="#" className="hover:text-primary">
+                <a href="/contact" className="hover:text-primary">
                   문의하기
                 </a>
               </li>

@@ -293,7 +293,10 @@ export const subscriptionApi = {
 
 // Shop API
 export const shopApi = {
-  getMyShops: () => apiClient.get("/shop-service/api/v1/shops"),
+  getMyShops: (page = 0, size = 10, sort = "createdAt,desc") =>
+    apiClient.get("/shop-service/api/v1/shops", {
+      params: { page, size, sort },
+    }),
   getMyShopDetail: (id: string) =>
     apiClient.get(`/shop-service/api/v1/shops/${id}`),
   createShop: (data: any) => apiClient.post("/shop-service/api/v1/shops", data),
