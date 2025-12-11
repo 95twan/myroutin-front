@@ -166,6 +166,7 @@ export const memberApi = {
   getMe: () => apiClient.get("/member-service/api/v1/members/me"),
   updateMe: (data: any) =>
     apiClient.put("/member-service/api/v1/members/me", data),
+  deleteMe: () => apiClient.delete("/member-service/api/v1/members/me"),
 }
 
 // Product API
