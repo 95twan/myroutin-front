@@ -11,22 +11,18 @@ export default function LoginPage() {
     setIsLoading(true)
     try {
       localStorage.setItem("login_provider", provider)
-      // OAuth 결과를 받을 콜백 페이지로 리다이렉트
       const redirectUri = `${window.location.origin}/auth/callback`
 
       if (provider === "kakao") {
         const NEXT_PUBLIC_KAKAO_CLIENT_ID =
           process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID
 
-        // 카카오 인가 코드 요청 URL 생성
         const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${NEXT_PUBLIC_KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(
           redirectUri
         )}&response_type=code`
 
-        // 이동
         window.location.href = kakaoAuthUrl
       } else if (provider === "google") {
-        // (옵션) 구글 로직 추가 시 사용
         const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
         const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(
           redirectUri

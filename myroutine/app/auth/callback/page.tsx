@@ -21,15 +21,10 @@ export default function OAuthCallbackPage() {
           throw new Error("OAuth 정보가 없습니다")
         }
 
-        console.log("[Client] Processing OAuth callback:", { provider, code })
-
-        // <CHANGE> Backend에 OAuth 코드 전송하여 로그인/회원가입 판별
         const response = await authApi.oauthLogin(provider, code)
-        console.log("[v0] OAuth response:", response)
 
         // 응답에 accessToken이 있으면 기존 회원 (로그인)
         if (response.loginStatus === "SUCCESS" && response.accessToken) {
-          console.log("기존 회원 - 로그인 성공")
           apiClient.setAccessToken(response.accessToken)
 
           // 토큰 저장 (localStorage 또는 cookie)
@@ -46,7 +41,6 @@ export default function OAuthCallbackPage() {
           response.loginStatus === "NEW_MEMBER" &&
           response.temporaryToken
         ) {
-          console.log("신규 회원 - 회원가입 필요")
           sessionStorage.setItem("temporaryToken", response.temporaryToken)
 
           // 회원가입 페이지로 이동

@@ -36,7 +36,6 @@ export default function SignupPage() {
     const tempToken = sessionStorage.getItem("temporaryToken")
 
     if (!tempToken) {
-      console.log("[v0] No OAuth session found")
       router.push("/login")
       return
     }
@@ -107,8 +106,6 @@ export default function SignupPage() {
         phoneNumber,
         address,
       })
-
-      console.log("[v0] Registration successful:", response)
 
       // <CHANGE> 토큰 저장 후 대시보드로 이동
       apiClient.setAccessToken(response.accessToken)
