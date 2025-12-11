@@ -2,20 +2,49 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Save } from "lucide-react"
+import { memberApi } from "@/lib/api-client"
+import { useRouter } from "next/navigation"
 
 export default function MyInfoTab() {
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    name: "홍길동",
-    email: "hong@example.com",
-    phone: "010-1234-5678",
-    address: "서울시 강남구 역삼동",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const data: any = await memberApi.getMe()
+        setFormData({
+          name: data?.name || "",
+          email: data?.email || "",
+          phone: data?.phoneNumber || "",
+          address: data?.address || "",
+        })
+      } catch (err: any) {
+        setError(err?.message || "내 정보를 불러오지 못했습니다.")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMe()
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -23,10 +52,37 @@ export default function MyInfoTab() {
   }
 
   const handleSave = async () => {
-    // TODO: Call API to update user info
-    console.log("Save user info:", formData)
-    alert("정보가 저장되었습니다!")
-    setIsEditing(false)
+    setIsSaving(true)
+    setError(null)
+    try {
+      await memberApi.updateMe({
+        name: formData.name,
+        phoneNumber: formData.phone,
+        address: formData.address,
+      })
+      setIsEditing(false)
+    } catch (err: any) {
+      setError(err?.message || "정보 저장 중 오류가 발생했습니다.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm("정말 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.")) return
+    setIsDeleting(true)
+    setError(null)
+    try {
+      await memberApi.deleteMe()
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      window.dispatchEvent(new Event("auth-changed"))
+      router.push("/login")
+    } catch (err: any) {
+      setError(err?.message || "탈퇴 처리 중 오류가 발생했습니다.")
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -43,6 +99,8 @@ export default function MyInfoTab() {
         </Button>
       </div>
 
+      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-bold text-foreground mb-2">
@@ -52,7 +110,7 @@ export default function MyInfoTab() {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            disabled={!isEditing}
+            disabled={!isEditing || isSaving || isLoading}
             className="h-10"
           />
         </div>
@@ -79,7 +137,7 @@ export default function MyInfoTab() {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            disabled={!isEditing}
+            disabled={!isEditing || isSaving || isLoading}
             className="h-10"
           />
         </div>
@@ -92,7 +150,7 @@ export default function MyInfoTab() {
             name="address"
             value={formData.address}
             onChange={handleChange}
-            disabled={!isEditing}
+            disabled={!isEditing || isSaving || isLoading}
             className="h-10"
           />
         </div>
@@ -103,17 +161,31 @@ export default function MyInfoTab() {
               onClick={() => setIsEditing(false)}
               variant="outline"
               className="flex-1"
+              disabled={isSaving}
             >
               취소
             </Button>
             <Button
               onClick={handleSave}
               className="flex-1 bg-primary hover:bg-primary/90"
+              disabled={isSaving}
             >
-              저장하기
+              {isSaving ? "저장 중..." : "저장하기"}
             </Button>
           </div>
         )}
+
+        <div className="pt-6 border-t border-border flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+            onClick={handleDelete}
+            disabled={isDeleting || isSaving || isLoading}
+          >
+            {isDeleting ? "탈퇴 처리 중..." : "회원 탈퇴"}
+          </Button>
+        </div>
       </div>
     </Card>
   )

@@ -2,56 +2,78 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Plus, Edit2, Trash2 } from "lucide-react"
+import { shopApi } from "@/lib/api-client"
 
 interface Shop {
   id: string
   name: string
-  email: string
-  phone: string
-  address: string
 }
 
 export default function MyShopsTab() {
-  const [shops, setShops] = useState<Shop[]>([
-    {
-      id: "1",
-      name: "건강한 밥상",
-      email: "shop1@example.com",
-      phone: "02-1234-5678",
-      address: "서울시 강남구",
-    },
-    {
-      id: "2",
-      name: "프리미엄 패션",
-      email: "shop2@example.com",
-      phone: "02-2345-6789",
-      address: "서울시 마포구",
-    },
-  ])
+  const [shops, setShops] = useState<Shop[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
+    shopName: "",
+    shopEmail: "",
+    shopPhoneNumber: "",
+    shopAddress: "",
+    shopRegistrationNumber: "",
   })
+
+  const normalizeShop = (shop: any): Shop => ({
+    id: (shop?.shopId ?? "").toString(),
+    name: shop?.shopName || "",
+  })
+
+  useEffect(() => {
+    const fetchShops = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const data: any = await shopApi.getMyShops()
+        console.log(data)
+
+        const list = Array.isArray(data?.content) ? data.content : []
+        setShops(list.map(normalizeShop))
+      } catch (err: any) {
+        setError(err?.message || "상점 목록을 불러오지 못했습니다.")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchShops()
+  }, [])
 
   const handleAddShop = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Call API to create shop
-    const newShop: Shop = {
-      id: Date.now().toString(),
-      ...formData,
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const created = await shopApi.createShop(formData)
+      setShops((prev) => [...prev, normalizeShop(created)])
+      setFormData({
+        shopName: "",
+        shopEmail: "",
+        shopPhoneNumber: "",
+        shopAddress: "",
+        shopRegistrationNumber: "",
+      })
+      setShowForm(false)
+      alert("상점이 등록되었습니다!")
+    } catch (err: any) {
+      setError(err?.message || "상점 등록에 실패했습니다.")
+    } finally {
+      setIsSubmitting(false)
     }
-    setShops((prev) => [...prev, newShop])
-    setFormData({ name: "", email: "", phone: "", address: "" })
-    setShowForm(false)
-    alert("상점이 등록되었습니다!")
   }
 
   const handleDeleteShop = (id: string) => {
@@ -74,13 +96,19 @@ export default function MyShopsTab() {
       {/* Add Shop Form */}
       {showForm && (
         <Card className="p-6 md:p-8 border-primary/20 bg-primary/5">
-          <h3 className="text-xl font-bold text-foreground mb-6">새 상점 등록</h3>
+          <h3 className="text-xl font-bold text-foreground mb-6">
+            새 상점 등록
+          </h3>
           <form onSubmit={handleAddShop} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-foreground mb-2">상점명 *</label>
+              <label className="block text-sm font-bold text-foreground mb-2">
+                상점명 *
+              </label>
               <Input
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                value={formData.shopName}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, shopName: e.target.value }))
+                }
                 placeholder="상점명을 입력하세요"
                 className="h-10"
                 required
@@ -88,11 +116,18 @@ export default function MyShopsTab() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-foreground mb-2">상점 이메일 *</label>
+              <label className="block text-sm font-bold text-foreground mb-2">
+                상점 이메일 *
+              </label>
               <Input
                 type="email"
-                value={formData.email}
-                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                value={formData.shopEmail}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    shopEmail: e.target.value,
+                  }))
+                }
                 placeholder="shop@example.com"
                 className="h-10"
                 required
@@ -100,11 +135,18 @@ export default function MyShopsTab() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-foreground mb-2">연락처 *</label>
+              <label className="block text-sm font-bold text-foreground mb-2">
+                연락처 *
+              </label>
               <Input
                 type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                value={formData.shopPhoneNumber}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    shopPhoneNumber: e.target.value,
+                  }))
+                }
                 placeholder="02-1234-5678"
                 className="h-10"
                 required
@@ -112,70 +154,110 @@ export default function MyShopsTab() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-foreground mb-2">상점 주소 *</label>
+              <label className="block text-sm font-bold text-foreground mb-2">
+                상점 주소 *
+              </label>
               <Input
-                value={formData.address}
-                onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+                value={formData.shopAddress}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    shopAddress: e.target.value,
+                  }))
+                }
                 placeholder="상점 주소를 입력하세요"
                 className="h-10"
                 required
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-bold text-foreground mb-2">
+                사업자등록번호 *
+              </label>
+              <Input
+                value={formData.shopRegistrationNumber}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    shopRegistrationNumber: e.target.value,
+                  }))
+                }
+                placeholder="123-45-67890"
+                className="h-10"
+                required
+              />
+            </div>
+
             <div className="flex gap-2 pt-4">
-              <Button type="button" onClick={() => setShowForm(false)} variant="outline" className="flex-1">
+              <Button
+                type="button"
+                onClick={() => setShowForm(false)}
+                variant="outline"
+                className="flex-1"
+              >
                 취소
               </Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90">
-                등록하기
+              <Button
+                type="submit"
+                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "등록 중..." : "등록하기"}
               </Button>
             </div>
           </form>
         </Card>
       )}
 
-      {/* Shops List */}
-      <div className="space-y-4">
-        {shops.map((shop) => (
-          <Card key={shop.id} className="p-6 md:p-8">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-xl font-bold text-foreground">{shop.name}</h3>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                  <Edit2 className="w-4 h-4" />
-                  수정
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteShop(shop.id)}
-                  className="gap-2 text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  삭제
-                </Button>
-              </div>
-            </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">이메일</p>
-                <p className="font-semibold text-foreground">{shop.email}</p>
+      {/* Shops List */}
+      {isLoading ? (
+        <Card className="p-6 text-center text-muted-foreground">
+          상점 정보를 불러오는 중...
+        </Card>
+      ) : shops.length === 0 ? (
+        <Card className="p-6 text-center text-muted-foreground">
+          등록된 상점이 없습니다.
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {shops.map((shop) => (
+            <Card key={shop.id} className="p-6 md:p-8 border-border/70">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                  {shop.name?.[0] ?? "S"}
+                </div>
+                <div className="flex-1 flex items-center justify-between gap-3">
+                  <h3 className="text-lg md:text-xl font-bold text-foreground">
+                    {shop.name}
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 bg-transparent"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      수정
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteShop(shop.id)}
+                      className="gap-2 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      삭제
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-muted-foreground">연락처</p>
-                <p className="font-semibold text-foreground">{shop.phone}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">주소</p>
-                <p className="font-semibold text-foreground">{shop.address}</p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
