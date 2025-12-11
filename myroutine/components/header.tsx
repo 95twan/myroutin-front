@@ -43,14 +43,14 @@ export default function Header() {
   }, [])
 
   const handleLogout = async () => {
-    localStorage.removeItem("accessToken")
-    localStorage.removeItem("refreshToken")
-    window.dispatchEvent(new Event("auth-changed"))
     try {
       await authApi.logout()
     } catch (error: any) {
       console.error("Logout error:", error)
     }
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("refreshToken")
+    window.dispatchEvent(new Event("auth-changed"))
     setIsLoggedIn(false)
     router.push("/login")
   }
