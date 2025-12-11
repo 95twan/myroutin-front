@@ -6,8 +6,9 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { Plus, Edit2, Trash2 } from "lucide-react"
+import { Plus } from "lucide-react"
 import { shopApi } from "@/lib/api-client"
+import Link from "next/link"
 
 interface Shop {
   id: string
@@ -42,7 +43,15 @@ export default function MyShopsTab() {
         console.log(data)
 
         const list = Array.isArray(data?.content) ? data.content : []
-        setShops(list.map(normalizeShop))
+        setShops(
+          list.map((item, idx) => {
+            const normalized = normalizeShop(item)
+            return {
+              id: normalized.id || String(idx),
+              name: normalized.name || "이름 없음",
+            }
+          })
+        )
       } catch (err: any) {
         setError(err?.message || "상점 목록을 불러오지 못했습니다.")
       } finally {
@@ -59,7 +68,14 @@ export default function MyShopsTab() {
     setError(null)
     try {
       const created = await shopApi.createShop(formData)
-      setShops((prev) => [...prev, normalizeShop(created)])
+      const normalized = normalizeShop(created)
+      const safeShop = {
+        id:
+          normalized.id ||
+          (created?.id ? String(created.id) : Date.now().toString()),
+        name: normalized.name || formData.shopName,
+      }
+      setShops((prev) => [...prev, safeShop])
       setFormData({
         shopName: "",
         shopEmail: "",
@@ -73,13 +89,6 @@ export default function MyShopsTab() {
       setError(err?.message || "상점 등록에 실패했습니다.")
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleDeleteShop = (id: string) => {
-    if (confirm("정말 상점을 삭제하시겠습니까?")) {
-      setShops((prev) => prev.filter((shop) => shop.id !== id))
-      alert("상점이 삭제되었습니다!")
     }
   }
 
@@ -224,37 +233,23 @@ export default function MyShopsTab() {
       ) : (
         <div className="space-y-4">
           {shops.map((shop) => (
-            <Card key={shop.id} className="p-6 md:p-8 border-border/70">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-                  {shop.name?.[0] ?? "S"}
-                </div>
-                <div className="flex-1 flex items-center justify-between gap-3">
-                  <h3 className="text-lg md:text-xl font-bold text-foreground">
-                    {shop.name}
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 bg-transparent"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      수정
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteShop(shop.id)}
-                      className="gap-2 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      삭제
-                    </Button>
+            <Link key={shop.id} href={`/shops/${shop.id}`} className="block">
+              <Card className="p-6 md:p-8 border-border/70 hover:shadow-lg transition-shadow cursor-pointer">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                    {shop.name?.[0] ?? "S"}
+                  </div>
+                  <div className="flex-1 flex items-center justify-between gap-3">
+                    <h3 className="text-lg md:text-xl font-bold text-foreground">
+                      {shop.name || "이름 없음"}
+                    </h3>
+                    <span className="text-sm text-muted-foreground">
+                      상세보기
+                    </span>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import SubscriptionForm from "@/components/subscription-form"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 
 // Mock product data
 const mockProduct = {
@@ -23,14 +24,13 @@ const mockProduct = {
   details: ["신선한 야채만 사용", "매일 배송", "영양 정보 제공", "반품 가능"],
 }
 
-export default function ProductDetailPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default function ProductDetailPage() {
+  const routeParams = useParams<{ id: string }>()
+  const id = (routeParams?.id as string) || ""
   const [quantity, setQuantity] = useState(1)
   const [showSubscriptionForm, setShowSubscriptionForm] = useState(false)
   const [activeTab, setActiveTab] = useState("description")
+  // id는 추후 API 연동 시 사용 예정
 
   return (
     <main className="flex-1">

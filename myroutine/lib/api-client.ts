@@ -15,6 +15,7 @@ export interface ApiError {
 class ApiClient {
   private baseUrl: string
   private accessToken: string | null = null
+  private isRefreshing = false
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
@@ -26,6 +27,56 @@ class ApiClient {
 
   clearAccessToken() {
     this.accessToken = null
+  }
+
+  private getStoredToken(key: string) {
+    if (typeof window === "undefined") return null
+    return localStorage.getItem(key)
+  }
+
+  private setStoredToken(key: string, value: string) {
+    if (typeof window === "undefined") return
+    localStorage.setItem(key, value)
+  }
+
+  private async refreshAccessToken(): Promise<string | null> {
+    if (this.isRefreshing) return null
+    if (typeof window === "undefined") return null
+    const refreshToken = this.getStoredToken("refreshToken")
+    if (!refreshToken) return null
+
+    this.isRefreshing = true
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/member-service/api/v1/auth/refresh-token`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ refreshToken }),
+        }
+      )
+
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : null
+
+      if (!response.ok || !data?.accessToken) {
+        return null
+      }
+
+      this.setAccessToken(data.accessToken)
+      this.setStoredToken("accessToken", data.accessToken)
+      if (data.refreshToken) {
+        this.setStoredToken("refreshToken", data.refreshToken)
+      }
+
+      return data.accessToken
+    } catch (err) {
+      return null
+    } finally {
+      this.isRefreshing = false
+    }
   }
 
   private async request<T>(
@@ -47,37 +98,52 @@ class ApiClient {
       })
     }
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+    const doRequest = async (token?: string) => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      }
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`
+      }
+
+      const response = await fetch(url.toString(), {
+        method,
+        headers,
+        body: options?.body ? JSON.stringify(options.body) : undefined,
+      })
+
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : null
+
+      return { response, data }
     }
 
-    // Add authorization header
-    let token = this.accessToken
-    if (!token && typeof window !== "undefined") {
-      token = localStorage.getItem("accessToken")
-    }
+    let token =
+      this.accessToken || this.getStoredToken("accessToken") || undefined
+    let hasRetried = false
 
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`
-    }
+    while (true) {
+      const { response, data } = await doRequest(token)
 
-    const response = await fetch(url.toString(), {
-      method,
-      headers,
-      body: options?.body ? JSON.stringify(options.body) : undefined,
-    })
+      if (response.ok) {
+        return data as T
+      }
 
-    const text = await response.text()
-    const data = text ? JSON.parse(text) : null
+      if (response.status === 401 && !hasRetried) {
+        const newToken = await this.refreshAccessToken()
+        hasRetried = true
+        if (newToken) {
+          token = newToken
+          continue
+        }
+      }
 
-    if (!response.ok) {
       throw {
         status: response.status,
-        message: data.message || "An error occurred",
+        message: data?.message || "An error occurred",
       } as ApiError
     }
-
-    return data as T
   }
 
   async get<T>(
@@ -228,7 +294,13 @@ export const subscriptionApi = {
 // Shop API
 export const shopApi = {
   getMyShops: () => apiClient.get("/shop-service/api/v1/shops"),
+  getMyShopDetail: (id: string) =>
+    apiClient.get(`/shop-service/api/v1/shops/${id}`),
   createShop: (data: any) => apiClient.post("/shop-service/api/v1/shops", data),
+  modifyShop: (id: string, data: any) =>
+    apiClient.put(`/shop-service/api/v1/shops/${id}`, data),
+  deleteShop: (id: string) =>
+    apiClient.delete(`/shop-service/api/v1/shops/${id}`),
 }
 
 // Wallet API
