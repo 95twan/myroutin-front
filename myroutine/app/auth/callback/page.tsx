@@ -46,8 +46,7 @@ export default function OAuthCallbackPage() {
           response.temporaryToken
         ) {
           console.log("신규 회원 - 회원가입 필요")
-          // 임시 토큰과 provider 정보를 세션/localStorage에 저장
-          localStorage.setItem("temporaryToken", response.temporaryToken)
+          sessionStorage.setItem("temporaryToken", response.temporaryToken)
 
           // 회원가입 페이지로 이동
           router.push("/auth/signup")
@@ -67,7 +66,7 @@ export default function OAuthCallbackPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <div className="p-8 text-center">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -92,7 +91,7 @@ export default function OAuthCallbackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <div className="p-8">
             <Link

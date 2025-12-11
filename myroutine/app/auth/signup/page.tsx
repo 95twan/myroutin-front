@@ -16,7 +16,6 @@ export default function SignupPage() {
   const [step, setStep] = useState<SignupStep>("email-verify")
   const [isLoading, setIsLoading] = useState(false)
 
-  // <CHANGE> sessionStorage에서 OAuth 정보 로드
   const [temporaryToken, setTemporaryToken] = useState<string | null>(null)
 
   // Email verification state
@@ -33,8 +32,7 @@ export default function SignupPage() {
   const [profileError, setProfileError] = useState("")
 
   useEffect(() => {
-    // sessionStorage에서 OAuth 정보 로드
-    const tempToken = localStorage.getItem("temporaryToken")
+    const tempToken = sessionStorage.getItem("temporaryToken")
 
     if (!tempToken) {
       console.log("[v0] No OAuth session found")
@@ -115,7 +113,7 @@ export default function SignupPage() {
       localStorage.setItem("refreshToken", response.refreshToken)
 
       // sessionStorage 정리
-      localStorage.removeItem("temporaryToken")
+      sessionStorage.removeItem("temporaryToken")
 
       router.push("/")
     } catch (error: any) {
@@ -131,10 +129,9 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <div className="p-8">
-          {/* ... existing code ... */}
           <Link
             href="/"
             className="flex items-center gap-2 mb-8 justify-center"

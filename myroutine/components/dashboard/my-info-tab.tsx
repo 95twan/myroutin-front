@@ -45,16 +45,12 @@ export default function MyInfoTab() {
 
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-bold text-foreground mb-2">이름</label>
-          <Input name="name" value={formData.name} onChange={handleChange} disabled={!isEditing} className="h-10" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-foreground mb-2">이메일</label>
+          <label className="block text-sm font-bold text-foreground mb-2">
+            이름
+          </label>
           <Input
-            name="email"
-            type="email"
-            value={formData.email}
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             disabled={!isEditing}
             className="h-10"
@@ -62,12 +58,36 @@ export default function MyInfoTab() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-foreground mb-2">휴대폰 번호</label>
-          <Input name="phone" value={formData.phone} onChange={handleChange} disabled={!isEditing} className="h-10" />
+          <label className="block text-sm font-bold text-foreground mb-2">
+            이메일
+          </label>
+          <Input
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            disabled
+            className="h-10"
+          />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-foreground mb-2">배송지 주소</label>
+          <label className="block text-sm font-bold text-foreground mb-2">
+            휴대폰 번호
+          </label>
+          <Input
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            disabled={!isEditing}
+            className="h-10"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-foreground mb-2">
+            배송지 주소
+          </label>
           <Input
             name="address"
             value={formData.address}
@@ -79,10 +99,17 @@ export default function MyInfoTab() {
 
         {isEditing && (
           <div className="flex gap-3 pt-4 border-t border-border">
-            <Button onClick={() => setIsEditing(false)} variant="outline" className="flex-1">
+            <Button
+              onClick={() => setIsEditing(false)}
+              variant="outline"
+              className="flex-1"
+            >
               취소
             </Button>
-            <Button onClick={handleSave} className="flex-1 bg-primary hover:bg-primary/90">
+            <Button
+              onClick={handleSave}
+              className="flex-1 bg-primary hover:bg-primary/90"
+            >
               저장하기
             </Button>
           </div>
