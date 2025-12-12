@@ -32,6 +32,9 @@ export default function OAuthCallbackPage() {
           if (response.refreshToken) {
             localStorage.setItem("refreshToken", response.refreshToken)
           }
+          if (response.id) {
+            localStorage.setItem("memberId", response.id)
+          }
           window.dispatchEvent(new Event("auth-changed"))
 
           router.push("/")

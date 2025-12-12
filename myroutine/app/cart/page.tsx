@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Minus, Plus, Trash2 } from "lucide-react"
+import { Minus, Plus, Trash2, X } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { orderApi, OrderType } from "@/lib/api-client"
 // import {
 //   cartApi,
 //   productApi,
@@ -27,6 +29,11 @@ export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isInitialized, setIsInitialized] = useState(false)
+  const [isOrdering, setIsOrdering] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
+  const [showOrderModal, setShowOrderModal] = useState(false)
+  const [recipientName, setRecipientName] = useState("")
+  const [recipientAddress, setRecipientAddress] = useState("")
   // const [products, setProducts] = useState<Record<string, ProductInfoResponse>>({})
   // const [isLoading, setIsLoading] = useState(true)
   // const [error, setError] = useState<string | null>(null)
@@ -168,6 +175,57 @@ export default function CartPage() {
     )
   }, [items])
 
+  const getMemberId = () =>
+    (typeof window !== "undefined" && localStorage.getItem("memberId")) ||
+    "mock-member-id"
+
+  const handleCheckout = async () => {
+    if (!recipientName.trim() || !recipientAddress.trim()) {
+      setOrderError("수령인 이름과 주소를 입력해주세요.")
+      return
+    }
+
+    const targetItems =
+      selectedIds.length > 0
+        ? items.filter((i) => selectedIds.includes(i.productId))
+        : items
+
+    if (targetItems.length === 0) {
+      setOrderError("주문할 상품을 선택해주세요.")
+      return
+    }
+
+    setIsOrdering(true)
+    setOrderError(null)
+    try {
+      const res = await orderApi.createOrder({
+        memberId: getMemberId(),
+        orderType: OrderType.NORMAL,
+        recipientName: recipientName.trim(),
+        recipientAddress: recipientAddress.trim() as any,
+        items: targetItems.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          imgUrl: item.thumbnailUrl,
+          unitPrice: item.price,
+          quantity: item.quantity,
+          totalPrice: item.price * item.quantity,
+        })),
+      })
+
+      if (res?.orderId) {
+        setShowOrderModal(false)
+        window.location.href = `/orders/${res.orderId}`
+      } else {
+        setOrderError("주문 생성 결과를 확인할 수 없습니다.")
+      }
+    } catch (err: any) {
+      setOrderError(err?.message || "주문 생성에 실패했습니다.")
+    } finally {
+      setIsOrdering(false)
+    }
+  }
+
   return (
     <main className="flex-1">
       <div className="container mx-auto px-4 py-10 space-y-6">
@@ -292,11 +350,85 @@ export default function CartPage() {
                 <span className="text-foreground">총 결제금액</span>
                 <span className="text-primary">₩{total.toLocaleString()}</span>
               </div>
-              <Button className="w-full h-12">결제하기 (목업)</Button>
+              <Button
+                className="w-full h-12"
+                onClick={() => {
+                  setOrderError(null)
+                  setShowOrderModal(true)
+                }}
+                disabled={isOrdering || items.length === 0}
+              >
+                결제하기
+              </Button>
             </Card>
           </div>
         )}
       </div>
+
+      {showOrderModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
+          <Card className="w-full max-w-lg p-6 space-y-4 relative">
+            <button
+              className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowOrderModal(false)}
+              aria-label="닫기"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-2xl font-bold text-foreground">배송 정보</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-1 block">
+                  받는 사람
+                </label>
+                <Input
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  placeholder="이름을 입력하세요"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-1 block">
+                  배송지 주소
+                </label>
+                <Input
+                  value={recipientAddress}
+                  onChange={(e) => setRecipientAddress(e.target.value)}
+                  placeholder="주소를 입력하세요"
+                />
+              </div>
+            </div>
+            {orderError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+                {orderError}
+              </p>
+            )}
+            <div className="flex items-center justify-between pt-2 text-sm text-muted-foreground">
+              <span>선택 상품 {selectedIds.length || items.length}개</span>
+              <span className="text-foreground font-semibold">
+                총 금액 ₩{total.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowOrderModal(false)}
+                disabled={isOrdering}
+              >
+                취소
+              </Button>
+              <Button
+                className="flex-1 bg-primary hover:bg-primary/90"
+                onClick={handleCheckout}
+                disabled={isOrdering}
+              >
+                {isOrdering ? "주문 중..." : "주문하기"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </main>
   )
 }

@@ -7,13 +7,15 @@ import ProductGrid from "@/components/product-grid"
 import Sidebar from "@/components/sidebar"
 import { useRouter, useSearchParams } from "next/navigation"
 
+const BASE_PRICE_BOUNDS: [number, number] = [0, 100000]
+
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const searchParams = useSearchParams()
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000])
+  const [priceRange, setPriceRange] = useState<[number, number]>(BASE_PRICE_BOUNDS)
 
   const syncFromParams = () => {
     const q = searchParams.get("q") || ""
@@ -62,6 +64,7 @@ export default function Home() {
               onCategoryChange={handleCategoryChange}
               priceRange={priceRange}
               onPriceChange={setPriceRange}
+              defaultPriceBounds={BASE_PRICE_BOUNDS}
             />
           </aside>
 

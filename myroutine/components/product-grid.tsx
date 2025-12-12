@@ -8,8 +8,9 @@ import {
   productApi,
   type PageResponse,
   type ProductInfoResponse,
+  type ProductSearchResponse,
+  searchApi,
 } from "@/lib/api-client"
-import { searchApi } from "@/lib/api-client"
 import { CATEGORY_OPTIONS, getCategoryLabel } from "@/lib/categories"
 
 interface ProductGridProps {
@@ -96,10 +97,12 @@ const mockProducts: ProductCardItem[] = [
 ]
 
 type ProductListResult =
-  | PageResponse<ProductInfoResponse>
-  | ProductInfoResponse[]
+  | PageResponse<ProductInfoResponse | ProductSearchResponse>
+  | (ProductInfoResponse | ProductSearchResponse)[]
 
-const extractProducts = (data: ProductListResult | null): ProductInfoResponse[] => {
+const extractProducts = (
+  data: ProductListResult | null
+): (ProductInfoResponse | ProductSearchResponse)[] => {
   if (!data) return []
   if (Array.isArray(data)) return data
   if ("content" in data && Array.isArray(data.content)) return data.content
@@ -170,19 +173,23 @@ export default function ProductGrid({
         }
 
         const list = extractProducts(data)
-        const normalized = list.map((item, idx) => ({
-          id: item.id?.toString() || String(idx),
-          name: item.name || "이름 없음",
-          category: getCategoryLabel(item.category),
-          price: item.price ?? 0,
-          image: item.thumbnailUrl || "/placeholder.svg",
-          status: item.status || "ON_SALE",
-        }))
+        const normalized = list.map((item, idx) => {
+          const id = "id" in item ? item.id : item.productId
+          return {
+            id: id?.toString() || String(idx),
+            name: item.name || "이름 없음",
+            category: getCategoryLabel(item.category),
+            price: item.price ?? 0,
+            image: item.thumbnailUrl || "/placeholder.svg",
+            status: item.status || "ON_SALE",
+          }
+        })
         const fallback = mockProducts.map((item) => ({
           ...item,
           category: getCategoryLabel(item.category),
         }))
-        setProducts(normalized.length > 0 ? normalized : fallback)
+        const nextProducts = normalized.length > 0 ? normalized : fallback
+        setProducts(nextProducts)
         setTotalPages(
           data && !Array.isArray(data) && typeof data.totalPages === "number" && data.totalPages > 0
             ? data.totalPages
