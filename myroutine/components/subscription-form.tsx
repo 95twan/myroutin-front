@@ -7,7 +7,13 @@ import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { ProductInfoResponse } from "@/lib/api-client"
+import {
+  DAY_OF_WEEK_OPTIONS,
+  type DayOfWeek,
+  type ProductInfoResponse,
+  type RecurrenceType,
+  subscriptionApi,
+} from "@/lib/api-client"
 import type React from "react"
 
 interface SubscriptionFormProps {
@@ -15,33 +21,33 @@ interface SubscriptionFormProps {
   onClose: () => void
 }
 
-const daysOfWeek = [
-  { id: 1, label: "월" },
-  { id: 2, label: "화" },
-  { id: 3, label: "수" },
-  { id: 4, label: "목" },
-  { id: 5, label: "금" },
-  { id: 6, label: "토" },
-  { id: 7, label: "일" },
-]
-
 const daysOfMonth = Array.from({ length: 28 }, (_, i) => i + 1)
 
 export default function SubscriptionForm({ product, onClose }: SubscriptionFormProps) {
-  const [recurrenceType, setRecurrenceType] = useState<"WEEKLY" | "MONTHLY">("WEEKLY")
-  const [selectedDaysOfWeek, setSelectedDaysOfWeek] = useState<number[]>([1, 3])
+  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("WEEKLY")
+  const [selectedDaysOfWeek, setSelectedDaysOfWeek] = useState<DayOfWeek[]>([1, 3])
   const [selectedDayOfMonth, setSelectedDayOfMonth] = useState("1")
   const [quantity, setQuantity] = useState(1)
   const [address, setAddress] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleDayOfWeekToggle = (day: number) => {
+  const handleDayOfWeekToggle = (day: DayOfWeek) => {
     setSelectedDaysOfWeek((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // TODO: Call API to create subscription
+    if (!address.trim()) {
+      alert("배송지를 입력해주세요.")
+      return
+    }
+
+    if (recurrenceType === "WEEKLY" && selectedDaysOfWeek.length === 0) {
+      alert("배송 요일을 선택해주세요.")
+      return
+    }
+
     const subscriptionData = {
       productId: product.id,
       quantity,
@@ -51,24 +57,31 @@ export default function SubscriptionForm({ product, onClose }: SubscriptionFormP
       dayOfMonth: recurrenceType === "MONTHLY" ? Number.parseInt(selectedDayOfMonth) : null,
     }
 
-    console.log("Subscription data:", subscriptionData)
-    alert("구독 신청이 완료되었습니다!")
-    onClose()
+    try {
+      setIsSubmitting(true)
+      await subscriptionApi.createSubscription(subscriptionData)
+      alert("구독 신청이 완료되었습니다!")
+      onClose()
+    } catch (err: any) {
+      alert(err?.message || "구독 신청에 실패했습니다.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg max-h-96 overflow-y-auto">
-        <form onSubmit={handleSubmit}>
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg max-h-[90vh] overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
           {/* Header */}
-          <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
+          <div className="bg-card border-b border-border p-6 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-foreground">구독 신청</h2>
             <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
               <X className="w-6 h-6" />
             </button>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 overflow-y-auto">
             {/* Product Info */}
             <div className="pb-6 border-b border-border">
               <p className="text-sm text-muted-foreground">상품</p>
@@ -79,7 +92,7 @@ export default function SubscriptionForm({ product, onClose }: SubscriptionFormP
             {/* Recurrence Type */}
             <div>
               <Label className="text-foreground font-bold mb-3 block">배송 주기</Label>
-              <RadioGroup value={recurrenceType} onValueChange={(v) => setRecurrenceType(v as "WEEKLY" | "MONTHLY")}>
+              <RadioGroup value={recurrenceType} onValueChange={(v) => setRecurrenceType(v as RecurrenceType)}>
                 <div className="flex items-center space-x-2 mb-3">
                   <RadioGroupItem value="WEEKLY" id="weekly" />
                   <Label htmlFor="weekly" className="cursor-pointer text-foreground">
@@ -100,7 +113,7 @@ export default function SubscriptionForm({ product, onClose }: SubscriptionFormP
               <div>
                 <Label className="text-foreground font-bold mb-3 block">배송 요일</Label>
                 <div className="grid grid-cols-7 gap-2">
-                  {daysOfWeek.map((day) => (
+                  {DAY_OF_WEEK_OPTIONS.map((day) => (
                     <button
                       key={day.id}
                       type="button"
@@ -190,12 +203,13 @@ export default function SubscriptionForm({ product, onClose }: SubscriptionFormP
             </div>
 
             {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-            >
-              구독 신청하기
-            </Button>
+          <Button
+            type="submit"
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold disabled:opacity-70"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "신청 중..." : "구독 신청하기"}
+          </Button>
           </div>
         </form>
       </Card>

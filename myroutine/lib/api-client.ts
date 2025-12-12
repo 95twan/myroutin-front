@@ -93,6 +93,7 @@ class ApiClient {
     options?: {
       body?: any
       params?: Record<string, any>
+      headers?: Record<string, string>
     }
   ): Promise<T> {
     const url = new URL(`${this.baseUrl}${endpoint}`)
@@ -109,9 +110,10 @@ class ApiClient {
     const doRequest = async (token?: string) => {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
+        ...(options?.headers ?? {}),
       }
 
-      if (token) {
+      if (token && !headers.Authorization) {
         headers["Authorization"] = `Bearer ${token}`
       }
 
@@ -156,7 +158,7 @@ class ApiClient {
 
   async get<T>(
     endpoint: string,
-    options?: { params?: Record<string, any> }
+    options?: { params?: Record<string, any>; headers?: Record<string, string> }
   ): Promise<T> {
     return this.request<T>("GET", endpoint, options)
   }
@@ -164,7 +166,7 @@ class ApiClient {
   async post<T>(
     endpoint: string,
     body?: any,
-    options?: { params?: Record<string, any> }
+    options?: { params?: Record<string, any>; headers?: Record<string, string> }
   ): Promise<T> {
     return this.request<T>("POST", endpoint, { body, ...options })
   }
@@ -172,7 +174,7 @@ class ApiClient {
   async put<T>(
     endpoint: string,
     body?: any,
-    options?: { params?: Record<string, any> }
+    options?: { params?: Record<string, any>; headers?: Record<string, string> }
   ): Promise<T> {
     return this.request<T>("PUT", endpoint, { body, ...options })
   }
@@ -180,14 +182,14 @@ class ApiClient {
   async patch<T>(
     endpoint: string,
     body?: any,
-    options?: { params?: Record<string, any> }
+    options?: { params?: Record<string, any>; headers?: Record<string, string> }
   ): Promise<T> {
     return this.request<T>("PATCH", endpoint, { body, ...options })
   }
 
   async delete<T>(
     endpoint: string,
-    options?: { params?: Record<string, any> }
+    options?: { params?: Record<string, any>; headers?: Record<string, string> }
   ): Promise<T> {
     return this.request<T>("DELETE", endpoint, options)
   }
@@ -390,20 +392,112 @@ export const cartApi = {
   clearCart: () => apiClient.delete("/catalog-service/api/v1/carts"),
 }
 
+export type DayOfWeek = 1 | 2 | 3 | 4 | 5 | 6 | 7
+
+export const DAY_OF_WEEK_OPTIONS: {
+  id: DayOfWeek
+  key: string
+  label: string
+}[] = [
+  { id: 1, key: "MON", label: "월" },
+  { id: 2, key: "TUE", label: "화" },
+  { id: 3, key: "WED", label: "수" },
+  { id: 4, key: "THU", label: "목" },
+  { id: 5, key: "FRI", label: "금" },
+  { id: 6, key: "SAT", label: "토" },
+  { id: 7, key: "SUN", label: "일" },
+]
+
+export const formatDaysOfWeek = (days: DayOfWeek[]) =>
+  days
+    .slice()
+    .sort((a, b) => a - b)
+    .map(
+      (day) =>
+        DAY_OF_WEEK_OPTIONS.find((opt) => opt.id === day)?.label ?? String(day)
+    )
+    .join(", ")
+
+export type RecurrenceType = "WEEKLY" | "MONTHLY"
+
+export type SubscriptionStatus =
+  | "ACTIVE"
+  | "PAUSED"
+  | "FAILED"
+  | "CANCELLED"
+  | "UNAVAILABLE"
+
+export interface SubscriptionInfo {
+  id: string
+  productId: string
+  productName: string
+  thumbnailUrl: string
+  subscriptionStatus: SubscriptionStatus
+  pricePerItem: number
+  quantity: number
+  totalPrice: number
+  deliveryAddress: string
+  createdAt: string
+  modifiedAt: string
+  nextRunDate: string
+  recurrenceType: RecurrenceType
+  dayOfWeek: DayOfWeek[]
+  dayOfMonth: number
+}
+
+export interface SubscriptionCreateRequest {
+  productId: string
+  quantity: number
+  deliveryAddress: string
+  recurrenceType: RecurrenceType
+  dayOfWeek?: DayOfWeek[]
+  dayOfMonth?: number
+}
+
+export interface SubscriptionUpdateRequest {
+  pricePerItem: number
+  quantity: number
+  deliveryAddress: string
+  recurrenceType: RecurrenceType
+  dayOfWeek?: DayOfWeek[]
+  dayOfMonth?: number
+}
+
 // Subscription API
 export const subscriptionApi = {
-  getSubscriptions: (memberId: string, page = 0) =>
-    apiClient.get("/subscription-service/api/v1/subscriptions", {
-      params: { memberId, page },
-    }),
-  createSubscription: (data: any) =>
-    apiClient.post("/subscription-service/api/v1/subscriptions", data),
+  getSubscription: (id: string) =>
+    apiClient.get<SubscriptionInfo>(
+      `/subscription-service/api/v1/subscriptions/${id}`
+    ),
+  getSubscriptions: (page = 0, size = 10, sort = "createdAt,desc") =>
+    apiClient.get<PageResponse<SubscriptionInfo>>(
+      "/subscription-service/api/v1/subscriptions",
+      {
+        params: { page, size, sort },
+      }
+    ),
+  createSubscription: (data: SubscriptionCreateRequest) =>
+    apiClient.post<SubscriptionInfo>(
+      "/subscription-service/api/v1/subscriptions",
+      data
+    ),
+  updateSubscription: (id: string, data: SubscriptionUpdateRequest) =>
+    apiClient.put<SubscriptionInfo>(
+      `/subscription-service/api/v1/subscriptions/${id}`,
+      data
+    ),
   pauseSubscription: (id: string) =>
-    apiClient.patch(`/subscription-service/api/v1/subscriptions/${id}/pause`),
+    apiClient.patch<SubscriptionInfo>(
+      `/subscription-service/api/v1/subscriptions/${id}/pause`
+    ),
   resumeSubscription: (id: string) =>
-    apiClient.put(`/subscription-service/api/v1/subscriptions/${id}/resume`),
+    apiClient.put<SubscriptionInfo>(
+      `/subscription-service/api/v1/subscriptions/${id}/resume`
+    ),
   cancelSubscription: (id: string) =>
-    apiClient.delete(`/subscription-service/api/v1/subscriptions/${id}`),
+    apiClient.delete<SubscriptionInfo>(
+      `/subscription-service/api/v1/subscriptions/${id}`
+    ),
 }
 
 export interface ShopListResponse {

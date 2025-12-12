@@ -152,7 +152,11 @@ export default function OrdersTab() {
       ) : (
         <>
           {orders.map((order) => (
-            <Card key={order.id} className="p-6 md:p-8">
+            <Card
+              key={order.id}
+              className="p-6 md:p-8 cursor-pointer hover:border-primary/60 hover:shadow-sm transition"
+              onClick={() => handleDetail(order.id)}
+            >
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-shrink-0">
                   <img
@@ -178,7 +182,7 @@ export default function OrdersTab() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <span className="font-medium text-foreground">수량:</span>{" "}
                       {order.amount}개
@@ -190,17 +194,6 @@ export default function OrdersTab() {
                       </span>{" "}
                       {order.orderNumber.padStart(8, "0")}
                     </div>
-                  </div>
-
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 ml-auto"
-                      onClick={() => handleDetail(order.id)}
-                    >
-                      상세보기 <ChevronRight className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               </div>
