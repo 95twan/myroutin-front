@@ -1,7 +1,7 @@
 export const CATEGORY_OPTIONS = [
   { id: "FOOD_BEVERAGE", label: "식음료" },
   { id: "FASHION_BEAUTY", label: "패션 · 뷰티" },
-  { id: "LIVING_APPLIANCE", label: "생활 · 가전" },
+  { id: "HOME_APPLIANCES", label: "생활 · 가전" },
   { id: "ELECTRONICS_DIGITAL", label: "전자 · 디지털" },
   { id: "HOBBY_LEISURE", label: "취미 · 레저" },
   { id: "HEALTH_FITNESS", label: "건강 · 피트니스" },

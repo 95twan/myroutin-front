@@ -297,15 +297,6 @@ export interface StatusRequest {
 
 // Product API
 export const productApi = {
-  searchProducts: (params: {
-    keyword?: string
-    category?: string
-    minPrice?: number
-    maxPrice?: number
-    sort?: string
-    page?: number
-    size?: number
-  }) => apiClient.get("/catalog-service/api/v1/search/products", { params }),
   getProductList: (params?: { page?: number; size?: number; sort?: string }) =>
     apiClient.get<PageResponse<ProductInfoResponse>>(
       `/catalog-service/api/v1/products`,
@@ -325,27 +316,49 @@ export const productApi = {
     apiClient.delete(`/catalog-service/api/v1/products/${id}`),
 }
 
+// Search API
+export const searchApi = {
+  searchProducts: (params: {
+    keyword?: string
+    category?: string
+    minPrice?: number
+    maxPrice?: number
+    sort?: string
+    page?: number
+    size?: number
+  }) => apiClient.get("/catalog-service/api/v1/search/products", { params }),
+}
+
+export interface CartItemInfo {
+  id: string
+  memberId: string
+  productId: string
+  quantity: number
+  createdAt: string
+  modifiedAt: string
+}
+
+export interface CartItemRequest {
+  productId: string
+  quantity: number
+}
+
 // Cart API
 export const cartApi = {
-  getCart: (memberId: string) =>
-    apiClient.get("/catalog-service/api/v1/carts", {
-      params: { memberId },
-    }),
-  addToCart: (data: {
-    memberId: string
-    productId: string
-    quantity: number
-  }) => apiClient.post("/catalog-service/api/v1/carts", data),
+  getCart: () =>
+    apiClient.get<PageResponse<CartItemInfo>>("/catalog-service/api/v1/carts"),
+  addToCart: (data: CartItemRequest) =>
+    apiClient.post<CartItemInfo>("/catalog-service/api/v1/carts", data),
   updateCartItem: (cartItemId: string, quantity: number) =>
-    apiClient.patch(`/catalog-service/api/v1/carts/${cartItemId}`, {
-      quantity,
-    }),
+    apiClient.patch<CartItemInfo>(
+      `/catalog-service/api/v1/carts/${cartItemId}`,
+      {
+        quantity,
+      }
+    ),
   removeCartItem: (cartItemId: string) =>
     apiClient.delete(`/catalog-service/api/v1/carts/${cartItemId}`),
-  clearCart: (memberId: string) =>
-    apiClient.delete("/catalog-service/api/v1/carts", {
-      params: { memberId },
-    }),
+  clearCart: () => apiClient.delete("/catalog-service/api/v1/carts"),
 }
 
 // Subscription API

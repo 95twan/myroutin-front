@@ -57,7 +57,9 @@ export default function Header() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Navigate to search results or filter products
+    const keyword = searchQuery.trim()
+    if (keyword.length === 0) return
+    router.push(`/?q=${encodeURIComponent(keyword)}`)
   }
 
   return (

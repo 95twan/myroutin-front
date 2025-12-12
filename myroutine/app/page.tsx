@@ -1,15 +1,44 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ProductGrid from "@/components/product-grid"
 import Sidebar from "@/components/sidebar"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000])
+
+  const syncFromParams = () => {
+    const q = searchParams.get("q") || ""
+    const category = searchParams.get("category")
+    setSearchQuery(q)
+    setSelectedCategory(category)
+  }
+
+  useEffect(() => {
+    syncFromParams()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  const handleCategoryChange = (next: string | null) => {
+    setSelectedCategory(next)
+    const params = new URLSearchParams(searchParams.toString())
+    if (next) {
+      params.set("category", next)
+    } else {
+      params.delete("category")
+    }
+    router.push(`/?${params.toString()}`)
+  }
+
+  const searchTerm = useMemo(() => searchQuery || "", [searchQuery])
 
   return (
     <main className="flex-1">
@@ -30,7 +59,7 @@ export default function Home() {
           <aside className={`${isSidebarOpen ? "block" : "hidden"} lg:block`}>
             <Sidebar
               selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
+              onCategoryChange={handleCategoryChange}
               priceRange={priceRange}
               onPriceChange={setPriceRange}
             />
@@ -54,7 +83,7 @@ export default function Home() {
             </div>
 
             <ProductGrid
-              searchQuery=""
+              searchQuery={searchTerm}
               category={selectedCategory}
               priceRange={priceRange}
             />

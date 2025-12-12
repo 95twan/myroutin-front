@@ -9,6 +9,7 @@ import {
   type PageResponse,
   type ProductInfoResponse,
 } from "@/lib/api-client"
+import { searchApi } from "@/lib/api-client"
 import { CATEGORY_OPTIONS, getCategoryLabel } from "@/lib/categories"
 
 interface ProductGridProps {
@@ -145,11 +146,17 @@ export default function ProductGrid({
       try {
         let data: ProductListResult | null = null
         if (hasFilter) {
-          data = await productApi.searchProducts({
+          const isDefaultRange =
+            currentRange[0] === defaultRange[0] &&
+            currentRange[1] === defaultRange[1]
+          const minPrice = isDefaultRange ? undefined : currentRange[0]
+          const maxPrice = isDefaultRange ? undefined : currentRange[1]
+
+          data = await searchApi.searchProducts({
             keyword: debouncedFilters.searchQuery || undefined,
             category: debouncedFilters.category || undefined,
-            minPrice: currentRange[0],
-            maxPrice: currentRange[1],
+            minPrice,
+            maxPrice,
             sort: "createdAt,desc",
             page,
             size: 12,

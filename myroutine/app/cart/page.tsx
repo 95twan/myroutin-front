@@ -6,54 +6,101 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+// import {
+//   cartApi,
+//   productApi,
+//   type CartItemInfo,
+//   type ProductInfoResponse,
+// } from "@/lib/api-client"
 
 type CartItem = {
-  id: string
+  productId: string
   name: string
   price: number
   quantity: number
   thumbnailUrl?: string
 }
 
-const MOCK_CART: CartItem[] = [
-  {
-    id: "1",
-    name: "프리미엄 샐러드 구독",
-    price: 8900,
-    quantity: 2,
-    thumbnailUrl: "/salad-subscription.jpg",
-  },
-  {
-    id: "2",
-    name: "유기농 요거트 세트",
-    price: 12900,
-    quantity: 1,
-    thumbnailUrl: "/organic-yogurt.jpg",
-  },
-]
+const CART_STORAGE_KEY = "mockCart"
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>(MOCK_CART)
+  const [items, setItems] = useState<CartItem[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isInitialized, setIsInitialized] = useState(false)
+  // const [products, setProducts] = useState<Record<string, ProductInfoResponse>>({})
+  // const [isLoading, setIsLoading] = useState(true)
+  // const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // API 버전 참고용
+    // const fetchCart = async () => {
+    //   setIsLoading(true)
+    //   setError(null)
+    //   try {
+    //     const cart = await cartApi.getCart()
+    //     const list = Array.isArray(cart?.content) ? cart.content : []
+    //     setItems(
+    //       list.map((item) => ({
+    //         productId: item.productId,
+    //         name: "",
+    //         price: 0,
+    //         quantity: item.quantity,
+    //       }))
+    //     )
+    //     const productIds = Array.from(new Set(list.map((i) => i.productId)))
+    //     const fetched = await Promise.all(
+    //       productIds.map(async (pid) => {
+    //         try {
+    //           const product = await productApi.getProductDetail(pid)
+    //           return [pid, product] as const
+    //         } catch {
+    //           return null
+    //         }
+    //       })
+    //     )
+    //     const map = fetched.reduce<Record<string, ProductInfoResponse>>((acc, cur) => {
+    //       if (cur) acc[cur[0]] = cur[1]
+    //       return acc
+    //     }, {})
+    //     setProducts(map)
+    //   } catch (err: any) {
+    //     setError(err?.message || "장바구니를 불러오지 못했습니다.")
+    //   } finally {
+    //     setIsLoading(false)
+    //   }
+    // }
+    // fetchCart()
+
     if (typeof window === "undefined") return
-    const stored = localStorage.getItem("mockCart")
-    if (!stored) return
     try {
-      const parsed = JSON.parse(stored) as CartItem[]
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        setItems(parsed)
+      const stored = localStorage.getItem(CART_STORAGE_KEY)
+      if (!stored) return
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) {
+        const normalized = parsed
+          .map((item: any) => ({
+            productId:
+              (item && (item.productId || item.id || item.product?.id)) ?? "",
+            name: item?.name ?? item?.product?.name ?? "",
+            price: item?.price ?? item?.product?.price ?? 0,
+            quantity: item?.quantity ?? 1,
+            thumbnailUrl:
+              item?.thumbnailUrl || item?.product?.thumbnailUrl || undefined,
+          }))
+          .filter((item) => !!item.productId)
+        setItems(normalized)
       }
     } catch {
-      setItems(MOCK_CART)
+      setItems([])
+    } finally {
+      setIsInitialized(true)
     }
   }, [])
 
   useEffect(() => {
-    if (typeof window === "undefined") return
-    localStorage.setItem("mockCart", JSON.stringify(items))
-  }, [items])
+    if (typeof window === "undefined" || !isInitialized) return
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
+  }, [items, isInitialized])
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -65,42 +112,61 @@ export default function CartPage() {
     if (selectedIds.length === items.length) {
       setSelectedIds([])
     } else {
-      setSelectedIds(items.map((item) => item.id))
+      setSelectedIds(items.map((item) => item.productId))
     }
   }
 
-  const updateQuantity = (id: string, delta: number) => {
-    setItems((prev) =>
-      prev
-        .map((item) =>
-          item.id === id
-            ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-            : item
-        )
-        .filter((item) => item.quantity > 0)
-    )
+  const updateQuantity = async (id: string, delta: number) => {
+    const target = items.find((item) => item.productId === id)
+    if (!target) return
+    const nextQty = Math.max(1, target.quantity + delta)
+    if (nextQty === target.quantity) return
+    setItems((prev) => {
+      const updated = prev.map((item) =>
+        item.productId === id ? { ...item, quantity: nextQty } : item
+      )
+      if (typeof window !== "undefined") {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updated))
+      }
+      return updated
+    })
   }
 
-  const removeSelected = () => {
+  const removeSelected = async () => {
     if (selectedIds.length === 0) return
-    setItems((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
+    setItems((prev) => {
+      const updated = prev.filter(
+        (item) => !selectedIds.includes(item.productId)
+      )
+      if (typeof window !== "undefined") {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updated))
+      }
+      return updated
+    })
     setSelectedIds([])
   }
 
-  const clearAll = () => {
+  const clearAll = async () => {
     setItems([])
     setSelectedIds([])
     if (typeof window !== "undefined") {
-      localStorage.removeItem("mockCart")
+      localStorage.removeItem(CART_STORAGE_KEY)
     }
+  }
+
+  const handleManualSync = () => {
+    if (typeof window === "undefined") return
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
   }
 
   const allSelected = items.length > 0 && selectedIds.length === items.length
 
-  const total = useMemo(
-    () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [items]
-  )
+  const total = useMemo(() => {
+    return items.reduce(
+      (sum, item) => sum + (item.price ?? 0) * item.quantity,
+      0
+    )
+  }, [items])
 
   return (
     <main className="flex-1">
@@ -131,10 +197,7 @@ export default function CartPage() {
                     checked={allSelected}
                     onCheckedChange={toggleSelectAll}
                   />
-                  <label
-                    htmlFor="select-all"
-                    className="text-sm text-foreground cursor-pointer"
-                  >
+                  <label htmlFor="select-all" className="text-sm text-foreground cursor-pointer">
                     전체 선택 ({selectedIds.length}/{items.length})
                   </label>
                 </div>
@@ -153,58 +216,66 @@ export default function CartPage() {
                   </Button>
                 </div>
               </div>
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 p-4">
-                  <Checkbox
-                    checked={selectedIds.includes(item.id)}
-                    onCheckedChange={() => toggleSelect(item.id)}
-                    aria-label={`${item.name} 선택`}
-                  />
-                  <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden">
-                    <img
-                      src={item.thumbnailUrl || "/placeholder.svg"}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
+              {items.map((item) => {
+                const productName = item.name || `상품 #${item.productId}`
+                const unitPrice = item.price ?? 0
+
+                return (
+                  <div
+                    key={item.productId}
+                    className="flex items-center gap-4 p-4"
+                  >
+                    <Checkbox
+                      checked={selectedIds.includes(item.productId)}
+                      onCheckedChange={() => toggleSelect(item.productId)}
+                      aria-label={`${productName} 선택`}
                     />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground line-clamp-2">
-                      {item.name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => updateQuantity(item.id, -1)}
-                        aria-label="수량 감소"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <span className="w-10 text-center font-semibold">
-                        {item.quantity}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => updateQuantity(item.id, 1)}
-                        aria-label="수량 증가"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                    <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden">
+                      <img
+                        src={item.thumbnailUrl || "/placeholder.svg"}
+                        alt={productName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground line-clamp-2">
+                        {productName}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(item.productId, -1)}
+                          aria-label="수량 감소"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                        <span className="w-10 text-center font-semibold">
+                          {item.quantity}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(item.productId, 1)}
+                          aria-label="수량 증가"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-primary">
+                        ₩{(unitPrice * item.quantity).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        (개당 ₩{unitPrice.toLocaleString()})
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-primary">
-                      ₩{(item.price * item.quantity).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      (개당 ₩{item.price.toLocaleString()})
-                    </p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </Card>
 
             <Card className="p-6 space-y-4">

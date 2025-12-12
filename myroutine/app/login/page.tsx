@@ -23,7 +23,7 @@ export default function LoginPage() {
 
         window.location.href = kakaoAuthUrl
       } else if (provider === "google") {
-        const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
+        const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
         const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(
           redirectUri
         )}&response_type=code&scope=email profile`

@@ -9,6 +9,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { productApi, type ProductInfoResponse } from "@/lib/api-client"
 import { getCategoryLabel } from "@/lib/categories"
+// import { cartApi } from "@/lib/api-client"
 
 const mockProduct: ProductInfoResponse = {
   id: "1",
@@ -25,6 +26,8 @@ const mockProduct: ProductInfoResponse = {
   modifiedAt: new Date().toISOString(),
 }
 
+const CART_STORAGE_KEY = "mockCart"
+
 export default function ProductDetailPage() {
   const routeParams = useParams<{ id: string }>()
   const id = (routeParams?.id as string) || ""
@@ -33,6 +36,44 @@ export default function ProductDetailPage() {
   const [showSubscriptionForm, setShowSubscriptionForm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const handleAddToCart = () => {
+    // TODO: 실제 장바구니 API 연결 시 아래 코드 사용
+    // cartApi
+    //   .addToCart({ productId: product.id?.toString() || id, quantity })
+    //   .then(() => toast.success("장바구니에 담았어요!"))
+    //   .catch(() => toast.error("장바구니 담기 실패"))
+
+    const cartItem = {
+      productId: product.id?.toString() || id,
+      name: product.name,
+      price: product.price,
+      quantity,
+      thumbnailUrl: product.thumbnailUrl,
+    }
+    if (typeof window !== "undefined") {
+      const prev = localStorage.getItem(CART_STORAGE_KEY)
+      let parsed: any[] = []
+      if (prev) {
+        try {
+          parsed = JSON.parse(prev)
+        } catch {
+          parsed = []
+        }
+      }
+      const existingIndex = parsed.findIndex(
+        (item) => item.productId === cartItem.productId
+      )
+      if (existingIndex >= 0) {
+        parsed[existingIndex].quantity =
+          (parsed[existingIndex].quantity || 0) + quantity
+      } else {
+        parsed.push(cartItem)
+      }
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(parsed))
+      alert("장바구니에 담았어요! (목업)")
+    }
+  }
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -140,36 +181,7 @@ export default function ProductDetailPage() {
                     variant="outline"
                     size="lg"
                     className="flex-1 h-12 bg-transparent"
-                    onClick={() => {
-                      const cartItem = {
-                        id: product.id?.toString() || id,
-                        name: product.name,
-                        price: product.price,
-                        quantity,
-                        thumbnailUrl: product.thumbnailUrl,
-                      }
-                      if (typeof window !== "undefined") {
-                        const prev = localStorage.getItem("mockCart")
-                        let parsed: any[] = []
-                        if (prev) {
-                          try {
-                            parsed = JSON.parse(prev)
-                          } catch {
-                            parsed = []
-                          }
-                        }
-                        const existingIndex = parsed.findIndex(
-                          (item) => item.id === cartItem.id
-                        )
-                        if (existingIndex >= 0) {
-                          parsed[existingIndex].quantity =
-                            (parsed[existingIndex].quantity || 0) + quantity
-                        } else {
-                          parsed.push(cartItem)
-                        }
-                        localStorage.setItem("mockCart", JSON.stringify(parsed))
-                      }
-                    }}
+                    onClick={handleAddToCart}
                   >
                     <ShoppingCart className="w-5 h-5 mr-2" />
                     장바구니
