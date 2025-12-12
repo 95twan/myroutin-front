@@ -433,22 +433,124 @@ export const shopApi = {
     apiClient.delete<ShopDeleteResponse>(`/shop-service/api/v1/shops/${id}`),
 }
 
+export interface WalletInfo {
+  id: string
+  memberId: string
+  balance: number
+}
+
+export interface WalletDepositInfo {
+  id: string
+  memberId: string
+  settlementId: string
+  amount: number
+  createdAt: string
+}
+
+export interface WalletWithdrawInfo {
+  id: string
+  memberId: string
+  amount: number
+  createdAt: string
+}
+
 // Wallet API
 export const walletApi = {
-  getWallet: (memberId: string) =>
-    apiClient.get(`/billing-service/api/v1/wallets/${memberId}`),
-  createWallet: (memberId: string) =>
-    apiClient.post(`/billing-service/api/v1/wallets/${memberId}`),
-  chargeWallet: (
-    memberId: string,
-    data: {
-      paymentKey: string
-      amount: number
-    }
-  ) =>
-    apiClient.put(`/billing-service/api/v1/wallets/${memberId}/charge`, data),
-  getDeposits: (memberId: string) =>
-    apiClient.get(`/billing-service/api/v1/wallets/${memberId}/deposits`),
-  getWithdraws: (memberId: string) =>
-    apiClient.get(`/billing-service/api/v1/wallets/${memberId}/withdraws`),
+  getWallet: () => apiClient.get<WalletInfo>(`/billing-service/api/v1/wallets`),
+  getDeposits: (page = 0, size = 10, sort = "createdAt,desc") =>
+    apiClient.get<PageResponse<WalletDepositInfo>>(
+      `/billing-service/api/v1/wallets/deposits`,
+      {
+        params: { page, size, sort },
+      }
+    ),
+  getWithdraws: (page = 0, size = 10, sort = "createdAt,desc") =>
+    apiClient.get<PageResponse<WalletWithdrawInfo>>(
+      `/billing-service/api/v1/wallets/withdraws`,
+      {
+        params: { page, size, sort },
+      }
+    ),
+}
+
+export interface PaymentInfo {
+  walletId: string
+  paymentKey: string
+  orderId: string
+  amount: number
+  method: string
+  status: PaymentStatus
+  requestedAt: string
+  approvedAt?: string
+  failReason?: string
+}
+
+export enum PaymentStatus {
+  READY = "READY",
+  CONFIRMED = "CONFIRMED",
+  FAILED = "FAILED",
+  CANCELED = "CANCELED",
+}
+
+export interface PaymentRequest {
+  amount: number
+}
+
+export interface PaymentConfirmRequest {
+  paymentKey: string
+  orderId: string
+  amount: number
+}
+
+export interface PaymentCancelRequest {
+  paymentKey: string
+  orderId: string
+  amount: string
+}
+
+export interface PaymentFailureInfo {
+  id: string
+  orderId: string
+  paymentKey: string
+  errorCode: string
+  errorMessage: string
+  amount: number
+  createdAt: string
+}
+
+export interface PaymentFailureRequest {
+  orderId: string
+  paymentKey?: string
+  code: string
+  message: string
+  amount?: number
+  rawPayload?: string
+}
+
+// Payment API
+export const paymentApi = {
+  getPayments: (page = 0, size = 10, sort = "createdAt,desc") =>
+    apiClient.get<PageResponse<PaymentInfo>>(
+      "/billing-service/api/v1/payments",
+      {
+        params: { page, size, sort },
+      }
+    ),
+  requestPayment: (data: PaymentRequest) =>
+    apiClient.post<PaymentInfo>(
+      "/billing-service/api/v1/payments/request",
+      data
+    ),
+  confirmPayment: (data: PaymentConfirmRequest) =>
+    apiClient.post<PaymentInfo>(
+      "/billing-service/api/v1/payments/confirm",
+      data
+    ),
+  cancelPayment: (data: PaymentCancelRequest) =>
+    apiClient.put<PaymentInfo>("/billing-service/api/v1/payments/cancel", data),
+  failurePayment: (data: PaymentFailureRequest) =>
+    apiClient.post<PaymentFailureInfo>(
+      "/billing-service/api/v1/payments/failure",
+      data
+    ),
 }
