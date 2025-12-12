@@ -108,9 +108,15 @@ export default function SignupPage() {
       })
 
       // <CHANGE> 토큰 저장 후 대시보드로 이동
+      if (!response.accessToken) {
+        throw new Error("accessToken이 응답에 없습니다.")
+      }
+
       apiClient.setAccessToken(response.accessToken)
       localStorage.setItem("accessToken", response.accessToken)
-      localStorage.setItem("refreshToken", response.refreshToken)
+      if (response.refreshToken) {
+        localStorage.setItem("refreshToken", response.refreshToken)
+      }
       window.dispatchEvent(new Event("auth-changed"))
 
       // sessionStorage 정리

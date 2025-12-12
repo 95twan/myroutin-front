@@ -7,17 +7,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Save } from "lucide-react"
-import { memberApi } from "@/lib/api-client"
+import { memberApi, type MemberInfoResponse } from "@/lib/api-client"
 import { useRouter } from "next/navigation"
+
+type MemberFormState = Pick<
+  MemberInfoResponse,
+  "id" | "name" | "email" | "phoneNumber" | "address"
+>
 
 export default function MyInfoTab() {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<MemberFormState>({
     name: "",
     email: "",
-    phone: "",
+    phoneNumber: "",
     address: "",
+    id: "",
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -29,12 +35,13 @@ export default function MyInfoTab() {
       setIsLoading(true)
       setError(null)
       try {
-        const data: any = await memberApi.getMe()
+        const data = await memberApi.getMe()
         setFormData({
           name: data?.name || "",
           email: data?.email || "",
-          phone: data?.phoneNumber || "",
+          phoneNumber: data?.phoneNumber || "",
           address: data?.address || "",
+          id: data?.id || "",
         })
       } catch (err: any) {
         setError(err?.message || "내 정보를 불러오지 못했습니다.")
@@ -48,7 +55,8 @@ export default function MyInfoTab() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    const key = name as keyof MemberFormState
+    setFormData((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleSave = async () => {
@@ -57,7 +65,7 @@ export default function MyInfoTab() {
     try {
       await memberApi.updateMe({
         name: formData.name,
-        phoneNumber: formData.phone,
+        phoneNumber: formData.phoneNumber,
         address: formData.address,
       })
       setIsEditing(false)
@@ -134,8 +142,8 @@ export default function MyInfoTab() {
             휴대폰 번호
           </label>
           <Input
-            name="phone"
-            value={formData.phone}
+            name="phoneNumber"
+            value={formData.phoneNumber}
             onChange={handleChange}
             disabled={!isEditing || isSaving || isLoading}
             className="h-10"

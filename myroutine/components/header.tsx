@@ -102,6 +102,7 @@ export default function Header() {
               variant="ghost"
               size="icon"
               className="text-foreground hover:text-primary"
+              onClick={() => router.push("/cart")}
             >
               <ShoppingCart className="w-5 h-5" />
             </Button>

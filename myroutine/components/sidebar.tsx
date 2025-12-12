@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { CATEGORY_OPTIONS } from "@/lib/categories"
 
 interface SidebarProps {
   selectedCategory: string | null
@@ -12,14 +13,6 @@ interface SidebarProps {
   priceRange: [number, number]
   onPriceChange: (range: [number, number]) => void
 }
-
-const categories = [
-  { id: "FOOD", label: "식품" },
-  { id: "CLOTHES", label: "의류" },
-  { id: "BEVERAGE", label: "음료" },
-  { id: "HEALTH", label: "건강/미용" },
-  { id: "HOME", label: "생활용품" },
-]
 
 export default function Sidebar({ selectedCategory, onCategoryChange, priceRange, onPriceChange }: SidebarProps) {
   return (
@@ -38,7 +31,7 @@ export default function Sidebar({ selectedCategory, onCategoryChange, priceRange
               전체
             </Label>
           </div>
-          {categories.map((cat) => (
+          {CATEGORY_OPTIONS.map((cat) => (
             <div key={cat.id} className="flex items-center">
               <Checkbox
                 id={cat.id}

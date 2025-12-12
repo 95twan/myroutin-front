@@ -5,33 +5,25 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { shopApi } from "@/lib/api-client"
+import { shopApi, type ShopInfoResponse } from "@/lib/api-client"
 import { Mail, Phone, MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
-
-interface ShopDetail {
-  id: string
-  name: string
-  email: string
-  phone: string
-  address: string
-}
 
 export default function ShopDetailPage() {
   const routeParams = useParams<{ id: string }>()
   const id = (routeParams?.id as string) || ""
   const router = useRouter()
-  const [shop, setShop] = useState<ShopDetail | null>(null)
+  const [shop, setShop] = useState<ShopInfoResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
+    shopName: "",
+    shopEmail: "",
+    shopPhoneNumber: "",
+    shopAddress: "",
   })
 
   useEffect(() => {
@@ -40,23 +32,13 @@ export default function ShopDetailPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const data: any = await shopApi.getMyShopDetail(id)
-        const normalized = {
-          id,
-          name: data?.shopName || "",
-          email: data?.shopEmail || "",
-          phone: data?.shopPhoneNumber || "",
-          address: data?.shopAddress || "",
-        }
-        setShop({
-          id,
-          ...normalized,
-        })
+        const data = await shopApi.getMyShopDetail(id)
+        setShop(data)
         setFormData({
-          name: normalized.name,
-          email: normalized.email,
-          phone: normalized.phone,
-          address: normalized.address,
+          shopName: data?.shopName || "",
+          shopEmail: data?.shopEmail || "",
+          shopPhoneNumber: data?.shopPhoneNumber || "",
+          shopAddress: data?.shopAddress || "",
         })
       } catch (err: any) {
         setError(err?.message || "상점 정보를 불러오지 못했습니다.")
@@ -78,17 +60,17 @@ export default function ShopDetailPage() {
     setError(null)
     try {
       await shopApi.modifyShop(id, {
-        shopName: formData.name,
-        shopEmail: formData.email,
-        shopPhoneNumber: formData.phone,
-        shopAddress: formData.address,
+        shopName: formData.shopName,
+        shopEmail: formData.shopEmail,
+        shopPhoneNumber: formData.shopPhoneNumber,
+        shopAddress: formData.shopAddress,
       })
       const updated = {
         id: shop.id,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
+        shopName: formData.shopName,
+        shopEmail: formData.shopEmail,
+        shopPhoneNumber: formData.shopPhoneNumber,
+        shopAddress: formData.shopAddress,
       }
       setShop(updated)
       setIsEditing(false)
@@ -144,12 +126,12 @@ export default function ShopDetailPage() {
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
-                    {shop?.name?.[0] ?? "S"}
+                    {shop?.shopName?.[0] ?? "S"}
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">상점명</p>
                     <h2 className="text-xl md:text-2xl font-bold text-foreground">
-                      {displayValue(shop?.name || "")}
+                      {displayValue(shop?.shopName || "")}
                     </h2>
                     <p className="text-xs text-muted-foreground">ID: {id}</p>
                   </div>
@@ -163,10 +145,10 @@ export default function ShopDetailPage() {
                           setIsEditing(false)
                           if (shop) {
                             setFormData({
-                              name: shop.name,
-                              email: shop.email,
-                              phone: shop.phone,
-                              address: shop.address,
+                              shopName: shop.shopName,
+                              shopEmail: shop.shopEmail,
+                              shopPhoneNumber: shop.shopPhoneNumber,
+                              shopAddress: shop.shopAddress,
                             })
                           }
                         }}
@@ -202,8 +184,10 @@ export default function ShopDetailPage() {
                   <div>
                     <p className="text-sm font-semibold text-foreground mb-1">상점명</p>
                     <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                      value={formData.shopName}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, shopName: e.target.value }))
+                      }
                       placeholder="상점명을 입력하세요"
                     />
                   </div>
@@ -211,8 +195,10 @@ export default function ShopDetailPage() {
                     <div>
                       <p className="text-sm font-semibold text-foreground mb-1">이메일</p>
                       <Input
-                        value={formData.email}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                        value={formData.shopEmail}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, shopEmail: e.target.value }))
+                        }
                         placeholder="shop@example.com"
                         type="email"
                       />
@@ -220,8 +206,13 @@ export default function ShopDetailPage() {
                     <div>
                       <p className="text-sm font-semibold text-foreground mb-1">연락처</p>
                       <Input
-                        value={formData.phone}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                        value={formData.shopPhoneNumber}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            shopPhoneNumber: e.target.value,
+                          }))
+                        }
                         placeholder="02-1234-5678"
                       />
                     </div>
@@ -229,8 +220,10 @@ export default function ShopDetailPage() {
                   <div>
                     <p className="text-sm font-semibold text-foreground mb-1">주소</p>
                     <Input
-                      value={formData.address}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+                      value={formData.shopAddress}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, shopAddress: e.target.value }))
+                      }
                       placeholder="상점 주소를 입력하세요"
                     />
                   </div>
@@ -243,7 +236,7 @@ export default function ShopDetailPage() {
                       <p className="text-sm text-muted-foreground">이메일</p>
                     </div>
                     <p className="font-semibold text-foreground">
-                      {displayValue(shop?.email || "")}
+                      {displayValue(shop?.shopEmail || "")}
                     </p>
                   </Card>
                   <Card className="p-4 bg-muted/40 border-border/60">
@@ -252,7 +245,7 @@ export default function ShopDetailPage() {
                       <p className="text-sm text-muted-foreground">연락처</p>
                     </div>
                     <p className="font-semibold text-foreground">
-                      {displayValue(shop?.phone || "")}
+                      {displayValue(shop?.shopPhoneNumber || "")}
                     </p>
                   </Card>
                   <Card className="p-4 bg-muted/40 border-border/60">
@@ -261,7 +254,7 @@ export default function ShopDetailPage() {
                       <p className="text-sm text-muted-foreground">주소</p>
                     </div>
                     <p className="font-semibold text-foreground">
-                      {displayValue(shop?.address || "")}
+                      {displayValue(shop?.shopAddress || "")}
                     </p>
                   </Card>
                 </div>

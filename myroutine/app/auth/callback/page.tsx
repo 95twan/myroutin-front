@@ -24,7 +24,7 @@ export default function OAuthCallbackPage() {
         const response = await authApi.oauthLogin(provider, code)
 
         // 응답에 accessToken이 있으면 기존 회원 (로그인)
-        if (response.loginStatus === "SUCCESS" && response.accessToken) {
+        if (response.accessToken) {
           apiClient.setAccessToken(response.accessToken)
 
           // 토큰 저장 (localStorage 또는 cookie)
@@ -37,10 +37,7 @@ export default function OAuthCallbackPage() {
           router.push("/")
         }
         // temporaryToken이 있으면 신규 회원 (회원가입 필요)
-        else if (
-          response.loginStatus === "NEW_MEMBER" &&
-          response.temporaryToken
-        ) {
+        else if (response.temporaryToken) {
           sessionStorage.setItem("temporaryToken", response.temporaryToken)
 
           // 회원가입 페이지로 이동

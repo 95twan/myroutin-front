@@ -1,15 +1,23 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
-export interface ApiResponse<T> {
-  status: number
+export interface ExceptionResponse {
+  code: string
   message: string
-  data: T
 }
 
-export interface ApiError {
-  status: number
-  message: string
+export interface PageResponse<T> {
+  content: T[]
+  pageable: any
+  last: boolean
+  totalPages: number
+  totalElements: number
+  size: number
+  number: number
+  sort: any
+  first: boolean
+  numberOfElements: number
+  empty: boolean
 }
 
 class ApiClient {
@@ -140,9 +148,9 @@ class ApiClient {
       }
 
       throw {
-        status: response.status,
+        code: data?.code || "UNKNOWN_ERROR",
         message: data?.message || "An error occurred",
-      } as ApiError
+      } as ExceptionResponse
     }
   }
 
@@ -187,33 +195,38 @@ class ApiClient {
 
 export const apiClient = new ApiClient(API_BASE_URL)
 
+export interface LoginInfoResponse {
+  accessToken?: string
+  refreshToken?: string
+  id?: string
+  memberName?: string
+  memberStatus?: string
+  loginStatus?: string
+  temporaryToken?: string
+}
+export interface OAuthRegisterRequest {
+  temporaryToken: string
+  email: string
+  name: string
+  phoneNumber: string
+  address: string
+}
+
 // Auth API
 export const authApi = {
   oauthLogin: (provider: string, providerCode: string) =>
-    apiClient.post<{
-      id: string
-      memberName: string
-      memberStatus: string
-      loginStatus: string
-      temporaryToken?: string
-      accessToken?: string
-      refreshToken?: string
-    }>("/member-service/api/v1/auth/oauth/login", {
-      provider,
-      providerCode,
-    }),
-  oauthRegister: (data: {
-    temporaryToken: string
-    email: string
-    name: string
-    phoneNumber: string
-    address: string
-  }) =>
-    apiClient.post<{
-      accessToken: string
-      refreshToken: string
-      memberId: string
-    }>("/member-service/api/v1/auth/oauth/register", data),
+    apiClient.post<LoginInfoResponse>(
+      "/member-service/api/v1/auth/oauth/login",
+      {
+        provider,
+        providerCode,
+      }
+    ),
+  oauthRegister: (data: OAuthRegisterRequest) =>
+    apiClient.post<LoginInfoResponse>(
+      "/member-service/api/v1/auth/oauth/register",
+      data
+    ),
   sendEmailVerification: (email: string, temporaryToken?: string) =>
     apiClient.post<void>("/member-service/api/v1/auth/email/send", {
       email,
@@ -227,12 +240,59 @@ export const authApi = {
   logout: () => apiClient.post<void>("/member-service/api/v1/auth/logout"),
 }
 
+export interface MemberInfoResponse {
+  id: string
+  name: string
+  email: string
+  phoneNumber: string
+  address: string
+}
+
+export interface MemberModifyRequest {
+  name: string
+  phoneNumber: string
+  address: string
+}
+
 // Member API
 export const memberApi = {
-  getMe: () => apiClient.get("/member-service/api/v1/members/me"),
-  updateMe: (data: any) =>
-    apiClient.put("/member-service/api/v1/members/me", data),
+  getMe: () =>
+    apiClient.get<MemberInfoResponse>("/member-service/api/v1/members/me"),
+  updateMe: (data: MemberModifyRequest) =>
+    apiClient.put<MemberInfoResponse>(
+      "/member-service/api/v1/members/me",
+      data
+    ),
   deleteMe: () => apiClient.delete("/member-service/api/v1/members/me"),
+}
+
+export interface ProductInfoResponse {
+  id: string
+  shopId: string
+  name: string
+  description: string
+  price: number
+  stock: number
+  status: string
+  category: string
+  thumbnailUrl: string
+  createdAt: string
+  modifiedAt: string
+}
+
+export interface ProductCreateRequest {
+  shopId: string
+  name: string
+  description: string
+  price: number
+  stock: number
+  status: string
+  category: string
+  thumbnailUrl: string
+}
+
+export interface StatusRequest {
+  status: string
 }
 
 // Product API
@@ -246,10 +306,23 @@ export const productApi = {
     page?: number
     size?: number
   }) => apiClient.get("/catalog-service/api/v1/search/products", { params }),
+  getProductList: (params?: { page?: number; size?: number; sort?: string }) =>
+    apiClient.get<PageResponse<ProductInfoResponse>>(
+      `/catalog-service/api/v1/products`,
+      { params }
+    ),
   getProductDetail: (id: string) =>
-    apiClient.get(`/catalog-service/api/v1/products/${id}`),
-  createProduct: (data: any) =>
+    apiClient.get<ProductInfoResponse>(
+      `/catalog-service/api/v1/products/${id}`
+    ),
+  createProduct: (data: ProductCreateRequest) =>
     apiClient.post("/catalog-service/api/v1/products", data),
+  updateProduct: (id: string, data: Partial<ProductCreateRequest>) =>
+    apiClient.patch(`/catalog-service/api/v1/products/${id}`, data),
+  updateProductStatus: (id: string, status: StatusRequest) =>
+    apiClient.patch(`/catalog-service/api/v1/products/${id}/status`, status),
+  deleteProduct: (id: string) =>
+    apiClient.delete(`/catalog-service/api/v1/products/${id}`),
 }
 
 // Cart API
@@ -291,19 +364,60 @@ export const subscriptionApi = {
     apiClient.delete(`/subscription-service/api/v1/subscriptions/${id}`),
 }
 
+export interface ShopListResponse {
+  shopId: string
+  shopName: string
+}
+
+export interface ShopInfoResponse {
+  id: string
+  shopName: string
+  shopEmail: string
+  shopPhoneNumber: string
+  shopAddress: string
+}
+
+export interface ShopRegisterResponse {
+  shopId: string
+  accessToken: string
+}
+
+export interface ShopRegisterRequest {
+  shopEmail: string
+  shopName: string
+  shopPhoneNumber: string
+  shopRegistrationNumber: string
+  shopAddress: string
+}
+
+export interface ShopModifyRequest {
+  shopEmail: string
+  shopName: string
+  shopPhoneNumber: string
+  shopAddress: string
+}
+
+export interface ShopDeleteResponse {
+  accessToken: string
+}
+
 // Shop API
 export const shopApi = {
-  getMyShops: (page = 0, size = 10, sort = "createdAt,desc") =>
-    apiClient.get("/shop-service/api/v1/shops", {
-      params: { page, size, sort },
-    }),
+  getMyShops: (page = 0, size = 5, sort = "createdAt,desc") =>
+    apiClient.get<PageResponse<ShopListResponse>>(
+      "/shop-service/api/v1/shops",
+      {
+        params: { page, size, sort },
+      }
+    ),
   getMyShopDetail: (id: string) =>
-    apiClient.get(`/shop-service/api/v1/shops/${id}`),
-  createShop: (data: any) => apiClient.post("/shop-service/api/v1/shops", data),
-  modifyShop: (id: string, data: any) =>
-    apiClient.put(`/shop-service/api/v1/shops/${id}`, data),
+    apiClient.get<ShopInfoResponse>(`/shop-service/api/v1/shops/${id}`),
+  createShop: (data: ShopRegisterRequest) =>
+    apiClient.post<ShopRegisterResponse>("/shop-service/api/v1/shops", data),
+  modifyShop: (id: string, data: ShopModifyRequest) =>
+    apiClient.put<ShopInfoResponse>(`/shop-service/api/v1/shops/${id}`, data),
   deleteShop: (id: string) =>
-    apiClient.delete(`/shop-service/api/v1/shops/${id}`),
+    apiClient.delete<ShopDeleteResponse>(`/shop-service/api/v1/shops/${id}`),
 }
 
 // Wallet API

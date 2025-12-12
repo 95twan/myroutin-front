@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,9 +7,11 @@ import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import type { ProductInfoResponse } from "@/lib/api-client"
+import type React from "react"
 
 interface SubscriptionFormProps {
-  product: any
+  product: ProductInfoResponse
   onClose: () => void
 }
 

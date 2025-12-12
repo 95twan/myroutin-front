@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Plus } from "lucide-react"
-import { shopApi } from "@/lib/api-client"
+import {
+  shopApi,
+  type PageResponse,
+  type ShopListResponse,
+  type ShopRegisterRequest,
+} from "@/lib/api-client"
 import Link from "next/link"
 
 interface Shop {
@@ -23,7 +28,7 @@ export default function MyShopsTab() {
   const [totalPages, setTotalPages] = useState(1)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ShopRegisterRequest>({
     shopName: "",
     shopEmail: "",
     shopPhoneNumber: "",
@@ -31,32 +36,24 @@ export default function MyShopsTab() {
     shopRegistrationNumber: "",
   })
 
-  const normalizeShop = (shop: any): Shop => ({
-    id: (shop?.shopId ?? "").toString(),
-    name: shop?.shopName || "",
-  })
-
   const fetchShops = async (pageToLoad = 0) => {
     setIsLoading(true)
     setError(null)
     try {
-      const data: any = await shopApi.getMyShops(pageToLoad, 6, "createdAt,desc")
+      const data: PageResponse<ShopListResponse> = await shopApi.getMyShops(
+        pageToLoad,
+        6,
+        "createdAt,desc"
+      )
       const list = Array.isArray(data?.content) ? data.content : []
       setShops(
-        list.map((item, idx) => {
-          const normalized = normalizeShop(item)
-          return {
-            id: normalized.id || String(idx),
-            name: normalized.name || "이름 없음",
-          }
-        })
+        list.map((item, idx) => ({
+          id: item.shopId || String(idx),
+          name: item.shopName || "이름 없음",
+        }))
       )
       setPage(typeof data?.number === "number" ? data.number : pageToLoad)
-      setTotalPages(
-        typeof data?.totalPages === "number" && data.totalPages > 0
-          ? data.totalPages
-          : 1
-      )
+      setTotalPages(data?.totalPages && data.totalPages > 0 ? data.totalPages : 1)
     } catch (err: any) {
       setError(err?.message || "상점 목록을 불러오지 못했습니다.")
     } finally {
@@ -73,14 +70,7 @@ export default function MyShopsTab() {
     setIsSubmitting(true)
     setError(null)
     try {
-      const created = await shopApi.createShop(formData)
-      const normalized = normalizeShop(created)
-      const safeShop = {
-        id:
-          normalized.id ||
-          (created?.id ? String(created.id) : Date.now().toString()),
-        name: normalized.name || formData.shopName,
-      }
+      await shopApi.createShop(formData)
       await fetchShops(0)
       setFormData({
         shopName: "",
