@@ -5,7 +5,13 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { shopApi, type ShopInfoResponse, productApi } from "@/lib/api-client"
+import {
+  apiClient,
+  shopApi,
+  type ShopInfoResponse,
+  productApi,
+  type ShopDeleteResponse,
+} from "@/lib/api-client"
 import { Mail, Phone, MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { CATEGORY_OPTIONS } from "@/lib/categories"
@@ -99,7 +105,15 @@ export default function ShopDetailPage() {
     setIsDeleting(true)
     setError(null)
     try {
-      await shopApi.deleteShop(id)
+      const res: ShopDeleteResponse = await shopApi.deleteShop(id)
+
+      // 삭제 시 seller 권한 제거된 토큰이 내려오면 교체
+      if (res?.accessToken) {
+        apiClient.setAccessToken(res.accessToken)
+        localStorage.setItem("accessToken", res.accessToken)
+        window.dispatchEvent(new Event("auth-changed"))
+      }
+
       alert("상점이 삭제되었습니다.")
       router.push("/dashboard")
     } catch (err: any) {
