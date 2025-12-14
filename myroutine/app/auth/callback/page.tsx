@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { authApi, apiClient } from "@/lib/api-client"
+import { authApi, persistAuthPayload } from "@/lib/api/auth"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
 
@@ -14,7 +14,7 @@ export default function OAuthCallbackPage() {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
-        const provider = localStorage.getItem("login_provider")
+        const provider = searchParams.get("state")
         const code = searchParams.get("code")
 
         if (!provider || !code) {
@@ -25,22 +25,13 @@ export default function OAuthCallbackPage() {
 
         // 응답에 accessToken이 있으면 기존 회원 (로그인)
         if (response.accessToken) {
-          apiClient.setAccessToken(response.accessToken)
-
-          // 토큰 저장 (localStorage 또는 cookie)
-          localStorage.setItem("accessToken", response.accessToken)
-          if (response.refreshToken) {
-            localStorage.setItem("refreshToken", response.refreshToken)
-          }
-          if (response.id) {
-            localStorage.setItem("memberId", response.id)
-          }
-          window.dispatchEvent(new Event("auth-changed"))
-
+          persistAuthPayload({
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            memberInfo: response.memberInfo,
+          })
           router.push("/")
-        }
-        // temporaryToken이 있으면 신규 회원 (회원가입 필요)
-        else if (response.temporaryToken) {
+        } else if (response.temporaryToken) {
           sessionStorage.setItem("temporaryToken", response.temporaryToken)
 
           // 회원가입 페이지로 이동

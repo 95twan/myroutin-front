@@ -1,3 +1,5 @@
+import type { MemberRole } from "./api/auth"
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
@@ -196,51 +198,6 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient(API_BASE_URL)
-
-export interface LoginInfoResponse {
-  accessToken?: string
-  refreshToken?: string
-  id?: string
-  memberName?: string
-  memberStatus?: string
-  loginStatus?: string
-  temporaryToken?: string
-}
-export interface OAuthRegisterRequest {
-  temporaryToken: string
-  email: string
-  name: string
-  phoneNumber: string
-  address: string
-}
-
-// Auth API
-export const authApi = {
-  oauthLogin: (provider: string, providerCode: string) =>
-    apiClient.post<LoginInfoResponse>(
-      "/member-service/api/v1/auth/oauth/login",
-      {
-        provider,
-        providerCode,
-      }
-    ),
-  oauthRegister: (data: OAuthRegisterRequest) =>
-    apiClient.post<LoginInfoResponse>(
-      "/member-service/api/v1/auth/oauth/register",
-      data
-    ),
-  sendEmailVerification: (email: string, temporaryToken?: string) =>
-    apiClient.post<void>("/member-service/api/v1/auth/email/send", {
-      email,
-      ...(temporaryToken && { temporaryToken }),
-    }),
-  verifyEmail: (email: string, verificationCode: string) =>
-    apiClient.post<void>("/member-service/api/v1/auth/email/verify", {
-      email,
-      verificationCode,
-    }),
-  logout: () => apiClient.post<void>("/member-service/api/v1/auth/logout"),
-}
 
 export interface MemberInfoResponse {
   id: string
@@ -514,8 +471,8 @@ export interface ShopInfoResponse {
 }
 
 export interface ShopRegisterResponse {
-  shopId: string
   accessToken: string
+  memberRoles: MemberRole[]
 }
 
 export interface ShopRegisterRequest {
@@ -535,6 +492,7 @@ export interface ShopModifyRequest {
 
 export interface ShopDeleteResponse {
   accessToken: string
+  memberRoles: MemberRole[]
 }
 
 // Shop API

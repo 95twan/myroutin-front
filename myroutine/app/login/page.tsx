@@ -10,8 +10,8 @@ export default function LoginPage() {
   const handleOAuthLogin = (provider: string) => {
     setIsLoading(true)
     try {
-      localStorage.setItem("login_provider", provider)
       const redirectUri = `${window.location.origin}/auth/callback`
+      const state = encodeURIComponent(provider) // provider를 state로 전달해 콜백에서 복원
 
       if (provider === "kakao") {
         const NEXT_PUBLIC_KAKAO_CLIENT_ID =
@@ -19,14 +19,14 @@ export default function LoginPage() {
 
         const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${NEXT_PUBLIC_KAKAO_CLIENT_ID}&redirect_uri=${encodeURIComponent(
           redirectUri
-        )}&response_type=code`
+        )}&response_type=code&state=${state}`
 
         window.location.href = kakaoAuthUrl
       } else if (provider === "google") {
         const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
         const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(
           redirectUri
-        )}&response_type=code&scope=email profile`
+        )}&response_type=code&scope=email profile&state=${state}`
 
         window.location.href = googleAuthUrl
       }

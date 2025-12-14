@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Save } from "lucide-react"
-import { memberApi, type MemberInfoResponse } from "@/lib/api-client"
+import { apiClient, memberApi, type MemberInfoResponse } from "@/lib/api-client"
 import { useRouter } from "next/navigation"
 
 type MemberFormState = Pick<
@@ -82,8 +82,11 @@ export default function MyInfoTab() {
     setError(null)
     try {
       await memberApi.deleteMe()
+      apiClient.clearAccessToken()
       localStorage.removeItem("accessToken")
       localStorage.removeItem("refreshToken")
+      localStorage.removeItem("memberId")
+      localStorage.removeItem("memberRoles")
       window.dispatchEvent(new Event("auth-changed"))
       router.push("/login")
     } catch (err: any) {

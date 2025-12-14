@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
-import { authApi, apiClient } from "@/lib/api-client"
+import { authApi, persistAuthPayload } from "@/lib/api/auth"
 
 type SignupStep = "email-verify" | "profile"
 
@@ -112,12 +112,11 @@ export default function SignupPage() {
         throw new Error("accessToken이 응답에 없습니다.")
       }
 
-      apiClient.setAccessToken(response.accessToken)
-      localStorage.setItem("accessToken", response.accessToken)
-      if (response.refreshToken) {
-        localStorage.setItem("refreshToken", response.refreshToken)
-      }
-      window.dispatchEvent(new Event("auth-changed"))
+      persistAuthPayload({
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        memberInfo: response.memberInfo,
+      })
 
       // sessionStorage 정리
       sessionStorage.removeItem("temporaryToken")

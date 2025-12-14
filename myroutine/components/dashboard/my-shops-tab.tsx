@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Plus } from "lucide-react"
 import {
-  apiClient,
   shopApi,
   type PageResponse,
   type ShopListResponse,
   type ShopRegisterRequest,
   type ShopRegisterResponse,
 } from "@/lib/api-client"
+import { persistAuthPayload } from "@/lib/api/auth"
 import Link from "next/link"
 
 interface Shop {
@@ -76,10 +76,10 @@ export default function MyShopsTab() {
 
       // 백엔드가 새 권한이 반영된 accessToken을 내려줄 경우 교체해준다.
       if (res?.accessToken) {
-        const newToken = res.accessToken
-        apiClient.setAccessToken(newToken)
-        localStorage.setItem("accessToken", newToken)
-        window.dispatchEvent(new Event("auth-changed"))
+        persistAuthPayload({
+          accessToken: res.accessToken,
+          roles: res.memberRoles,
+        })
       }
 
       await fetchShops(0)

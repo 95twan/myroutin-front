@@ -6,12 +6,12 @@ import { useParams, useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
-  apiClient,
   shopApi,
   type ShopInfoResponse,
   productApi,
   type ShopDeleteResponse,
 } from "@/lib/api-client"
+import { persistAuthPayload } from "@/lib/api/auth"
 import { Mail, Phone, MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { CATEGORY_OPTIONS } from "@/lib/categories"
@@ -109,13 +109,14 @@ export default function ShopDetailPage() {
 
       // 삭제 시 seller 권한 제거된 토큰이 내려오면 교체
       if (res?.accessToken) {
-        apiClient.setAccessToken(res.accessToken)
-        localStorage.setItem("accessToken", res.accessToken)
-        window.dispatchEvent(new Event("auth-changed"))
+        persistAuthPayload({
+          accessToken: res.accessToken,
+          roles: res.memberRoles,
+        })
       }
 
       alert("상점이 삭제되었습니다.")
-      router.push("/dashboard")
+      router.push("/dashboard?tab=shops")
     } catch (err: any) {
       setError(err?.message || "상점 삭제에 실패했습니다.")
     } finally {

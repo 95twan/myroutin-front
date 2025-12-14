@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { authApi } from "@/lib/api-client"
+import { apiClient } from "@/lib/api-client"
+import { authApi } from "@/lib/api/auth"
 
 export default function Header() {
   const router = useRouter()
@@ -48,11 +49,14 @@ export default function Header() {
     } catch (error: any) {
       console.error("Logout error:", error)
     }
+    apiClient.clearAccessToken()
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
+    localStorage.removeItem("memberId")
+    localStorage.removeItem("memberRoles")
     window.dispatchEvent(new Event("auth-changed"))
     setIsLoggedIn(false)
-    router.push("/login")
+    router.push("/")
   }
 
   const handleSearch = (e: React.FormEvent) => {
