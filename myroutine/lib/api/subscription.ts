@@ -38,10 +38,7 @@ export interface SubscriptionCreateRequest {
 }
 
 export interface SubscriptionUpdateRequest {
-  pricePerItem: number
-  quantity: number
   deliveryAddress: string
-  recurrenceType: RecurrenceType
   dayOfWeek?: DayOfWeek[]
   dayOfMonth?: number
 }

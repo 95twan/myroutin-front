@@ -83,6 +83,7 @@ export default function SubscriptionDetailPage() {
   const [recurrenceType, setRecurrenceType] = useState<"WEEKLY" | "MONTHLY">("WEEKLY")
   const [selectedDays, setSelectedDays] = useState<number[]>([])
   const [selectedDayOfMonth, setSelectedDayOfMonth] = useState<number>(1)
+  const [initialDayCount, setInitialDayCount] = useState(0)
 
   useEffect(() => {
     if (!id) return
@@ -98,6 +99,7 @@ export default function SubscriptionDetailPage() {
         setRecurrenceType(data.recurrenceType)
         setSelectedDays(data.dayOfWeek || [])
         setSelectedDayOfMonth(data.dayOfMonth || 1)
+        setInitialDayCount((data.dayOfWeek || []).length)
       } catch (err: any) {
         console.error("Failed to fetch subscription, fallback to mock.", err)
         const mock = mockSubscriptions[id]
@@ -108,6 +110,7 @@ export default function SubscriptionDetailPage() {
           setRecurrenceType(mock.recurrenceType)
           setSelectedDays(mock.dayOfWeek || [])
           setSelectedDayOfMonth(mock.dayOfMonth || 1)
+          setInitialDayCount((mock.dayOfWeek || []).length)
         } else {
           setError("구독 정보를 불러올 수 없습니다.")
         }
@@ -142,6 +145,7 @@ export default function SubscriptionDetailPage() {
         setRecurrenceType(updated.recurrenceType)
         setSelectedDays(updated.dayOfWeek || [])
         setSelectedDayOfMonth(updated.dayOfMonth || 1)
+        setInitialDayCount((updated.dayOfWeek || []).length)
       }
     } catch (err: any) {
       alert(err?.message || "처리 중 오류가 발생했습니다.")
@@ -151,9 +155,17 @@ export default function SubscriptionDetailPage() {
   }
 
   const handleToggleDay = (day: number) => {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    )
+    if (!selectedDays.includes(day)) {
+      const limit = initialDayCount > 0 ? initialDayCount : undefined
+      if (limit && selectedDays.length >= limit) {
+        alert(`선택 가능한 요일 개수는 ${limit}개입니다. 다른 요일을 해제 후 선택하세요.`)
+        return
+      }
+      setSelectedDays((prev) => [...prev, day])
+      return
+    }
+
+    setSelectedDays((prev) => prev.filter((d) => d !== day))
   }
 
   const handleUpdate = async () => {
@@ -163,20 +175,29 @@ export default function SubscriptionDetailPage() {
       return
     }
 
-    if (recurrenceType === "WEEKLY" && selectedDays.length === 0) {
-      alert("배송 요일을 선택해주세요.")
-      return
+    if (recurrenceType === "WEEKLY") {
+      if (selectedDays.length === 0) {
+        alert("배송 요일을 선택해주세요.")
+        return
+      }
+      if (initialDayCount > 0 && selectedDays.length !== initialDayCount) {
+        alert(`배송 요일은 처음 설정된 ${initialDayCount}개로 유지되어야 합니다.`)
+        return
+      }
     }
 
     try {
       setIsUpdating(true)
-      const payload = {
-        quantity,
-        deliveryAddress: address.trim(),
-        recurrenceType,
-        dayOfWeek: recurrenceType === "WEEKLY" ? selectedDays : undefined,
-        dayOfMonth: recurrenceType === "MONTHLY" ? selectedDayOfMonth : undefined,
-      }
+      const payload =
+        recurrenceType === "WEEKLY"
+          ? {
+              deliveryAddress: address.trim(),
+              dayOfWeek: selectedDays,
+            }
+          : {
+              deliveryAddress: address.trim(),
+              dayOfMonth: selectedDayOfMonth,
+            }
 
       const updated = await subscriptionApi.updateSubscription(
         subscription.id,
@@ -363,117 +384,61 @@ export default function SubscriptionDetailPage() {
                 </div>
               </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <p className="font-bold text-foreground">배송 주기</p>
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant={recurrenceType === "WEEKLY" ? "default" : "outline"}
-                    onClick={() => isEditing && setRecurrenceType("WEEKLY")}
-                    disabled={!isEditing}
-                  >
-                    주간
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={recurrenceType === "MONTHLY" ? "default" : "outline"}
-                    onClick={() => isEditing && setRecurrenceType("MONTHLY")}
-                    disabled={!isEditing}
-                  >
-                    월간
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="font-bold text-foreground">수량</p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => isEditing && setQuantity((q) => Math.max(1, q - 1))}
-                    disabled={!isEditing}
-                  >
-                    -
-                  </Button>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(e) =>
-                      isEditing &&
-                      setQuantity(Math.max(1, Number(e.target.value) || 1))
-                    }
-                    className="w-24 text-center"
-                    disabled={!isEditing}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => isEditing && setQuantity((q) => q + 1)}
-                    disabled={!isEditing}
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {recurrenceType === "WEEKLY" ? (
-              <div className="space-y-2">
-                <p className="font-bold text-foreground">배송 요일</p>
-                <div className="grid grid-cols-7 gap-2">
-                  {DAY_OF_WEEK_OPTIONS.map((day) => (
-                    <button
-                      key={day.id}
-                      type="button"
-                      onClick={() => isEditing && handleToggleDay(day.id)}
-                      className={`py-2 px-3 rounded-md font-bold text-sm transition-colors ${
-                        selectedDays.includes(day.id)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-foreground hover:bg-muted/80"
-                      } ${!isEditing ? "cursor-not-allowed opacity-70" : ""}`}
-                      disabled={!isEditing}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="font-bold text-foreground">배송 날짜</p>
-                <Select
-                  value={selectedDayOfMonth.toString()}
-                  onValueChange={(v) => isEditing && setSelectedDayOfMonth(Number(v))}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="날짜 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                      <SelectItem key={day} value={day.toString()}>
-                        {day}일
-                      </SelectItem>
+              {recurrenceType === "WEEKLY" ? (
+                <div className="space-y-2">
+                  <p className="font-bold text-foreground">배송 요일</p>
+                  <div className="grid grid-cols-7 gap-2">
+                    {DAY_OF_WEEK_OPTIONS.map((day) => (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => handleToggleDay(day.id)}
+                        className={`py-2 px-3 rounded-md font-bold text-sm transition-colors ${
+                          selectedDays.includes(day.id)
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {day.label}
+                      </button>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="font-bold text-foreground">배송 날짜</p>
+                  <Select
+                    value={selectedDayOfMonth.toString()}
+                    onValueChange={(v) =>
+                      isEditing && setSelectedDayOfMonth(Number(v))
+                    }
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="날짜 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map(
+                        (day) => (
+                          <SelectItem key={day} value={day.toString()}>
+                            {day}일
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-            <div className="space-y-2">
-              <p className="font-bold text-foreground">배송지</p>
-              <Input
-                value={address}
-                onChange={(e) => isEditing && setAddress(e.target.value)}
-                placeholder="배송지를 입력하세요"
-                disabled={!isEditing}
-              />
-            </div>
+              <div className="space-y-2">
+                <p className="font-bold text-foreground">배송지</p>
+                <Input
+                  value={address}
+                  onChange={(e) => isEditing && setAddress(e.target.value)}
+                  placeholder="배송지를 입력하세요"
+                  disabled={!isEditing}
+                />
+              </div>
             </div>
           )}
         </Card>
