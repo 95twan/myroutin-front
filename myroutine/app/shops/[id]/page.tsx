@@ -423,7 +423,6 @@ export default function ShopDetailPage() {
                       <h2 className="text-xl md:text-2xl font-bold text-foreground">
                         {displayValue(shop?.shopName || "")}
                       </h2>
-                      <p className="text-xs text-muted-foreground">ID: {id}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -665,7 +664,7 @@ export default function ShopDetailPage() {
             </button>
             <h3 className="text-2xl font-bold text-foreground">상품 상세/수정</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2 grid grid-cols-[96px_1fr] gap-3 items-center">
+              <div className="md:col-span-2 flex items-center gap-3">
                 <div className="w-24 h-20 rounded-md bg-muted overflow-hidden">
                   <img
                     src={productForm.thumbnailUrl || "/placeholder.svg"}
@@ -673,12 +672,9 @@ export default function ShopDetailPage() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">상품 ID</p>
-                  <p className="text-sm font-semibold text-foreground">
-                    {selectedProduct.id}
-                  </p>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  대표 이미지는 아래 URL을 수정해 변경할 수 있어요.
+                </p>
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground mb-1">상품명</p>
