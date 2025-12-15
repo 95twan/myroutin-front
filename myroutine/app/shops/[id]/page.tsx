@@ -83,19 +83,6 @@ export default function ShopDetailPage() {
       setIsLoadingProducts(false)
     }
   }, [id])
-  const mockShopProduct: ProductInfoResponse = {
-    id: "mock-1",
-    shopId: id,
-    name: "샘플 상품",
-    description: "목업 상품입니다.",
-    price: 10000,
-    stock: 10,
-    status: "ON_SALE",
-    category: CATEGORY_OPTIONS[0]?.id || "FOOD_BEVERAGE",
-    thumbnailUrl: "/placeholder.svg",
-    createdAt: "",
-    modifiedAt: "",
-  }
 
   useEffect(() => {
     const fetchShop = async () => {
@@ -612,14 +599,11 @@ export default function ShopDetailPage() {
               <div className="space-y-2">
                 {shopProducts.length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    등록된 상품이 없어요. 아래는 레이아웃 확인용 목업입니다.
+                    등록된 상품이 없어요.
                   </p>
                 )}
                 <div className="border rounded-md divide-y divide-border overflow-hidden">
-                  {(shopProducts.length > 0
-                    ? shopProducts
-                    : [mockShopProduct]
-                  ).map((product) => (
+                  {shopProducts.map((product) => (
                     <div
                       key={product.id?.toString()}
                       className="grid grid-cols-[80px_1fr] gap-3 p-4 items-center hover:bg-muted/60 cursor-pointer"

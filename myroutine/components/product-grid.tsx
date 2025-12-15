@@ -28,74 +28,6 @@ type ProductCardItem = {
   status: string
 }
 
-// Mock data - TODO: Replace with actual API calls
-const mockProducts: ProductCardItem[] = [
-  {
-    id: "1",
-    name: "프리미엄 샐러드 구독",
-    category: "FOOD_BEVERAGE",
-    price: 8900,
-    image: "/salad-subscription.jpg",
-    status: "ON_SALE",
-  },
-  {
-    id: "2",
-    name: "유기농 요거트 세트",
-    category: "FOOD_BEVERAGE",
-    price: 12900,
-    image: "/organic-yogurt.jpg",
-    status: "ON_SALE",
-  },
-  {
-    id: "3",
-    name: "프리미엄 커피 원두",
-    category: "FOOD_BEVERAGE",
-    price: 15000,
-    image: "/premium-coffee-beans.jpg",
-    status: "ON_SALE",
-  },
-  {
-    id: "4",
-    name: "스포츠 티셔츠 월간",
-    category: "FASHION_BEAUTY",
-    price: 25000,
-    image: "/sports-t-shirt.png",
-    status: "ON_SALE",
-  },
-  {
-    id: "5",
-    name: "비타민 구독 패키지",
-    category: "HEALTH_FITNESS",
-    price: 29900,
-    image: "/vitamin-package.jpg",
-    status: "ON_SALE",
-  },
-  {
-    id: "6",
-    name: "홈 스킨케어 세트",
-    category: "FASHION_BEAUTY",
-    price: 35000,
-    image: "/skincare-set.png",
-    status: "ON_SALE",
-  },
-  {
-    id: "7",
-    name: "프리미엄 침구류",
-    category: "LIVING_APPLIANCE",
-    price: 45000,
-    image: "/premium-bedding.jpg",
-    status: "ON_SALE",
-  },
-  {
-    id: "8",
-    name: "친환경 세제 구독",
-    category: "LIVING_APPLIANCE",
-    price: 18900,
-    image: "/eco-detergent.jpg",
-    status: "ON_SALE",
-  },
-]
-
 type ProductListResult =
   | PageResponse<ProductInfoResponse | ProductSearchResponse>
   | (ProductInfoResponse | ProductSearchResponse)[]
@@ -114,12 +46,7 @@ export default function ProductGrid({
   category,
   priceRange,
 }: ProductGridProps) {
-  const [products, setProducts] = useState<ProductCardItem[]>(
-    mockProducts.map((item) => ({
-      ...item,
-      category: getCategoryLabel(item.category),
-    }))
-  )
+  const [products, setProducts] = useState<ProductCardItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -174,7 +101,10 @@ export default function ProductGrid({
 
         const list = extractProducts(data)
         const normalized = list.map((item, idx) => {
-          const id = "id" in item ? item.id : item.productId
+          const id =
+            ("id" in item && item.id) ||
+            ("productId" in item && item.productId) ||
+            undefined
           const rawPrice = item.price
           const price =
             typeof rawPrice === "string"
@@ -195,19 +125,14 @@ export default function ProductGrid({
             status: item.status || "ON_SALE",
           }
         })
-        const fallback = mockProducts.map((item) => ({
-          ...item,
-          category: getCategoryLabel(item.category),
-        }))
-        const nextProducts = normalized.length > 0 ? normalized : fallback
-        setProducts(nextProducts)
+        setProducts(normalized)
         setTotalPages(
           data && !Array.isArray(data) && typeof data.totalPages === "number" && data.totalPages > 0
             ? data.totalPages
             : 1
         )
       } catch (err) {
-        setProducts(mockProducts)
+        setProducts([])
         setTotalPages(1)
       } finally {
         setIsLoading(false)

@@ -23,16 +23,6 @@ type OrderCard = {
 }
 
 const PAGE_SIZE = 5
-const MOCK_ORDER: OrderCard = {
-  id: "mock-order-1",
-  productName: "프리미엄 샐러드 구독",
-  productImage: "/vibrant-mixed-salad.png",
-  totalPrice: 18900,
-  amount: 2,
-  date: "2024-01-15",
-  orderNumber: "MOCK0001",
-  status: "PAID",
-}
 
 const toOrderCard = (
   order: OrderListDetailInfo,
@@ -80,8 +70,7 @@ export default function OrdersTab() {
         const data = await orderApi.getOrderList(page, PAGE_SIZE, "3")
         const normalized =
           data?.orderList?.map((order, idx) => toOrderCard(order, idx)) || []
-        const nextOrders = normalized.length > 0 ? normalized : [MOCK_ORDER]
-        setOrders(nextOrders)
+        setOrders(normalized)
         setTotalPages(
           normalized.length > 0
             ? Math.max(data?.pageInfo?.totalPages || 1, 1)
@@ -89,7 +78,7 @@ export default function OrdersTab() {
         )
       } catch (err: any) {
         setError(err?.message || "주문 목록을 불러오지 못했습니다.")
-        setOrders([MOCK_ORDER])
+        setOrders([])
         setTotalPages(1)
       } finally {
         setIsLoading(false)

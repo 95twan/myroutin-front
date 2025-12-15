@@ -5,8 +5,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ArrowDown, ArrowUp, Plus } from "lucide-react"
-import {
-} from "@/lib/api-client"
 import { paymentApi, type PaymentInfo } from "@/lib/api/payment"
 import {
   walletApi,
@@ -28,49 +26,16 @@ type TransactionFilter = "all" | "use" | "charge"
 const PAGE_SIZE = 10
 const PAYMENT_PAGE_SIZE = 10
 
-const MOCK_BALANCE = 50000
-const MOCK_TRANSACTIONS: Transaction[] = [
-  {
-    id: "1",
-    type: "deposit",
-    amount: 50000,
-    description: "충전",
-    date: "2024-01-15",
-  },
-  {
-    id: "2",
-    type: "withdraw",
-    amount: 8900,
-    description: "상품 결제",
-    date: "2024-01-14",
-  },
-  {
-    id: "3",
-    type: "withdraw",
-    amount: 12900,
-    description: "상품 결제",
-    date: "2024-01-13",
-  },
-  {
-    id: "4",
-    type: "deposit",
-    amount: 30000,
-    description: "환불",
-    date: "2024-01-10",
-  },
-]
-
 export default function WalletTab() {
-  const [balance, setBalance] = useState(MOCK_BALANCE)
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(MOCK_TRANSACTIONS)
+  const [balance, setBalance] = useState(0)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isWalletLoading, setIsWalletLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [walletError, setWalletError] = useState<string | null>(null)
   const [filter, setFilter] = useState<TransactionFilter>("all")
   const [page, setPage] = useState(0)
-  const [totalCount, setTotalCount] = useState(MOCK_TRANSACTIONS.length)
+  const [totalCount, setTotalCount] = useState(0)
   const [showChargeHistory, setShowChargeHistory] = useState(false)
   const [payments, setPayments] = useState<PaymentInfo[]>([])
   const [paymentPage, setPaymentPage] = useState(0)
@@ -111,14 +76,6 @@ export default function WalletTab() {
     return parsed.toISOString().slice(0, 10)
   }
 
-  const getMockByFilter = (selectedFilter: TransactionFilter) => {
-    if (selectedFilter === "charge")
-      return MOCK_TRANSACTIONS.filter((tx) => tx.type === "deposit")
-    if (selectedFilter === "use")
-      return MOCK_TRANSACTIONS.filter((tx) => tx.type === "withdraw")
-    return MOCK_TRANSACTIONS
-  }
-
   const getPaymentStatusBadge = (status?: string) => {
     const normalized = status?.toLowerCase() || ""
     if (normalized.includes("confirm") || normalized.includes("success"))
@@ -140,12 +97,10 @@ export default function WalletTab() {
         const wallet = await walletApi.getWallet()
         if (typeof wallet?.balance === "number") {
           setBalance(wallet.balance)
-        } else {
-          setBalance(MOCK_BALANCE)
         }
       } catch (err: any) {
         setWalletError(err?.message || "잔액을 불러오지 못했어요.")
-        setBalance(MOCK_BALANCE)
+        setBalance(0)
       } finally {
         setIsWalletLoading(false)
       }
@@ -194,29 +149,20 @@ export default function WalletTab() {
           setTotalCount(withdraws?.totalElements || mergedTransactions.length)
         }
 
-        if (mergedTransactions.length === 0) {
-          setError("거래 내역을 불러오지 못했어요.")
-          setTransactions(getMockByFilter(selectedFilter))
-          setTotalCount(getMockByFilter(selectedFilter).length)
-        } else {
-          if (selectedFilter === "all") {
-            if (mergedTransactions.length <= start && start > 0) {
-              setPage(0)
-              return
-            }
-            setTransactions(mergedTransactions.slice(start, end))
-          } else {
-            setTransactions(mergedTransactions)
+        if (selectedFilter === "all") {
+          if (mergedTransactions.length <= start && start > 0) {
+            setPage(0)
+            return
           }
+          setTransactions(mergedTransactions.slice(start, end))
+        } else {
+          setTransactions(mergedTransactions)
         }
       } catch (err: any) {
         setError(err?.message || "거래 내역을 불러오지 못했어요.")
-        const mock = getMockByFilter(selectedFilter)
-        setTransactions(
-          mock.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
-        )
-        setTotalCount(mock.length)
-        if (page > 0 && mock.length <= page * PAGE_SIZE) {
+        setTransactions([])
+        setTotalCount(0)
+        if (page > 0) {
           setPage(0)
         }
       } finally {
@@ -268,12 +214,12 @@ export default function WalletTab() {
         </p>
         {error && (
           <p className="text-sm text-red-600 mb-2">
-            {error} (목업 데이터 표시 중)
+            {error}
           </p>
         )}
         {walletError && (
           <p className="text-sm text-red-600 mb-2">
-            {walletError} (잔액 목업 표시 중)
+            {walletError}
           </p>
         )}
         <div className="flex flex-col sm:flex-row gap-2">

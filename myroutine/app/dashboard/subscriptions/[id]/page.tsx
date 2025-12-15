@@ -23,43 +23,6 @@ import { subscriptionApi, type SubscriptionInfo } from "@/lib/api/subscription"
 
 type ActionType = "pause" | "resume" | "cancel"
 
-const mockSubscriptions: Record<string, SubscriptionInfo> = {
-  "1": {
-    id: "1",
-    productId: "1",
-    productName: "프리미엄 샐러드 구독",
-    thumbnailUrl: "/vibrant-mixed-salad.png",
-    subscriptionStatus: "ACTIVE",
-    pricePerItem: 8900,
-    quantity: 1,
-    totalPrice: 8900,
-    deliveryAddress: "서울시 강남구 테헤란로 123",
-    createdAt: "2024-01-01",
-    modifiedAt: "2024-01-10",
-    nextRunDate: "2024-01-20",
-    recurrenceType: "WEEKLY",
-    dayOfWeek: [1, 3, 5],
-    dayOfMonth: 0,
-  },
-  "2": {
-    id: "2",
-    productId: "2",
-    productName: "유기농 요거트 세트",
-    thumbnailUrl: "/creamy-yogurt-bowl.png",
-    subscriptionStatus: "PAUSED",
-    pricePerItem: 12900,
-    quantity: 1,
-    totalPrice: 12900,
-    deliveryAddress: "서울시 성동구 왕십리로 45",
-    createdAt: "2024-01-05",
-    modifiedAt: "2024-01-11",
-    nextRunDate: "2024-02-01",
-    recurrenceType: "MONTHLY",
-    dayOfWeek: [],
-    dayOfMonth: 1,
-  },
-}
-
 const statusMeta = {
   ACTIVE: { label: "활성", className: "bg-green-100 text-green-800" },
   PAUSED: { label: "일시정지", className: "bg-yellow-100 text-yellow-800" },
@@ -106,19 +69,8 @@ export default function SubscriptionDetailPage() {
         setSelectedDayOfMonth(data.dayOfMonth || 1)
         setInitialDayCount((data.dayOfWeek || []).length)
       } catch (err: any) {
-        console.error("Failed to fetch subscription, fallback to mock.", err)
-        const mock = mockSubscriptions[id]
-        if (mock) {
-          setSubscription(mock)
-          setQuantity(mock.quantity || 1)
-          setAddress(mock.deliveryAddress || "")
-          setRecurrenceType(mock.recurrenceType)
-          setSelectedDays(mock.dayOfWeek || [])
-          setSelectedDayOfMonth(mock.dayOfMonth || 1)
-          setInitialDayCount((mock.dayOfWeek || []).length)
-        } else {
-          setError("구독 정보를 불러올 수 없습니다.")
-        }
+        console.error("Failed to fetch subscription.", err)
+        setError("구독 정보를 불러올 수 없습니다.")
       } finally {
         setIsLoading(false)
       }
@@ -224,6 +176,24 @@ export default function SubscriptionDetailPage() {
     } finally {
       setIsUpdating(false)
     }
+  }
+
+  if (!isLoading && !subscription) {
+    return (
+      <div className="container mx-auto px-4 py-8 space-y-4">
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2 px-0"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          뒤로가기
+        </Button>
+        <Card className="p-6 text-muted-foreground">
+          {error || "구독 정보를 불러올 수 없습니다."}
+        </Card>
+      </div>
+    )
   }
 
   const status = subscription?.subscriptionStatus || "ACTIVE"

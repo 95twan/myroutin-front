@@ -54,13 +54,19 @@ export default function SubscriptionForm({ product, onClose }: SubscriptionFormP
       return
     }
 
+    const productId = product.id?.toString()
+    if (!productId) {
+      alert("상품 정보를 불러올 수 없습니다.")
+      return
+    }
+
     const subscriptionData = {
-      productId: product.id,
+      productId,
       quantity,
       recurrenceType,
       deliveryAddress: address,
-      dayOfWeek: recurrenceType === "WEEKLY" ? selectedDaysOfWeek : null,
-      dayOfMonth: recurrenceType === "MONTHLY" ? Number.parseInt(selectedDayOfMonth) : null,
+      dayOfWeek: recurrenceType === "WEEKLY" ? selectedDaysOfWeek : undefined,
+      dayOfMonth: recurrenceType === "MONTHLY" ? Number.parseInt(selectedDayOfMonth) : undefined,
     }
 
     try {

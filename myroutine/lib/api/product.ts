@@ -104,7 +104,7 @@ export const searchApi = {
     category?: string
     minPrice?: number
     maxPrice?: number
-    shopId: string
+    shopId?: string
     sort?: string
     page?: number
     size?: number

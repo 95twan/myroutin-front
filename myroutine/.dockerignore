@@ -1,0 +1,14 @@
+.next
+node_modules
+npm-debug.log
+pnpm-lock.yaml
+yarn.lock
+dist
+tmp
+temp
+.git
+.gitignore
+.env
+.env.local
+.env.production
+.env.development

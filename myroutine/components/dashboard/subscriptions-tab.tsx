@@ -30,42 +30,9 @@ type SubscriptionItem = Partial<
   status?: "ACTIVE" | "PAUSED" | "CANCELLED"
 }
 
-const mockSubscriptions: SubscriptionItem[] = [
-  {
-    id: "1",
-    productName: "프리미엄 샐러드 구독",
-    productImage: "/vibrant-mixed-salad.png",
-    price: 8900,
-    status: "ACTIVE",
-    nextRunDate: "2024-01-20",
-    recurrenceType: "WEEKLY",
-    dayOfWeek: [1, 3, 5],
-  },
-  {
-    id: "2",
-    productName: "유기농 요거트 세트",
-    productImage: "/creamy-yogurt-bowl.png",
-    price: 12900,
-    status: "PAUSED",
-    nextRunDate: "2024-02-01",
-    recurrenceType: "MONTHLY",
-    dayOfMonth: 1,
-  },
-  {
-    id: "3",
-    productName: "프리미엄 커피 원두",
-    productImage: "/steaming-coffee-cup.png",
-    price: 15000,
-    status: "ACTIVE",
-    nextRunDate: "2024-01-25",
-    recurrenceType: "WEEKLY",
-    dayOfWeek: [2, 4],
-  },
-]
-
 export default function SubscriptionsTab() {
   const [subscriptions, setSubscriptions] =
-    useState<SubscriptionItem[]>(mockSubscriptions)
+    useState<SubscriptionItem[]>([])
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
@@ -79,7 +46,7 @@ export default function SubscriptionsTab() {
           )
         }
       } catch (err) {
-        console.error("Failed to fetch subscriptions, using mock data.", err)
+        console.error("Failed to fetch subscriptions.", err)
       }
     }
 
@@ -114,6 +81,11 @@ export default function SubscriptionsTab() {
 
   return (
     <div className="space-y-6">
+      {subscriptions.length === 0 && (
+        <Card className="p-6 text-sm text-muted-foreground">
+          구독 내역이 없습니다.
+        </Card>
+      )}
       {subscriptions.map((sub) => (
         <Link
           key={sub.id}

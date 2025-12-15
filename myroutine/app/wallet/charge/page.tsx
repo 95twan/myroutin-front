@@ -61,7 +61,6 @@ export default function WalletChargePage() {
 
   useEffect(() => {
     const result = searchParams?.get("payment")
-    const isMock = searchParams?.get("mock") === "1"
     if (!result) return
 
     const paymentKey = searchParams.get("paymentKey") || ""
@@ -80,15 +79,9 @@ export default function WalletChargePage() {
       setDebug(
         `결제 콜백: result=${result}, orderId=${orderId}, paymentKey=${paymentKey}, amount=${
           amountParam || ""
-        }${isMock ? " (mock)" : ""}`
+        }`
       )
       try {
-        if (isMock) {
-          setStatus("success")
-          setMessage("목업 결제가 완료되었습니다.")
-          return
-        }
-
         if (result === "success") {
           if (!paymentKey || !orderId || !amountValue) {
             throw new Error("결제 확인 정보가 부족합니다.")
@@ -139,19 +132,11 @@ export default function WalletChargePage() {
       const toss = await loadTossPayments()
       let orderId = `wallet-charge-${Date.now()}`
       let paymentKey: string | undefined
-      let mock = false
-
-      try {
-        const payment = await paymentApi.requestPayment({
-          amount: parsedAmount,
-        })
-        orderId = payment?.orderId || payment?.paymentKey || orderId
-        paymentKey = payment?.paymentKey
-      } catch (err) {
-        mock = true
-        orderId = `mock-wallet-charge-${Date.now()}`
-        setMessage("API 연동 전: 목업 결제로 진행합니다.")
-      }
+      const payment = await paymentApi.requestPayment({
+        amount: parsedAmount,
+      })
+      orderId = payment?.orderId || payment?.paymentKey || orderId
+      paymentKey = payment?.paymentKey
 
       const successParams = new URLSearchParams({
         payment: "success",
@@ -163,10 +148,6 @@ export default function WalletChargePage() {
         orderId,
         amount: String(parsedAmount),
       })
-      if (mock) {
-        successParams.append("mock", "1")
-        failParams.append("mock", "1")
-      }
       if (paymentKey) {
         successParams.append("paymentKey", paymentKey)
       }

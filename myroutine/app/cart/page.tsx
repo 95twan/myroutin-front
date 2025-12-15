@@ -25,8 +25,6 @@ type CartItem = {
   thumbnailUrl?: string
 }
 
-const CART_STORAGE_KEY = "mockCart"
-
 const normalizeCartItem = (item: Partial<CartItemInfo> | any): CartItem | null => {
   const productId = item?.productId ?? item?.id ?? item?.product?.id
   if (!productId) return null
@@ -53,9 +51,8 @@ const normalizeCartItem = (item: Partial<CartItemInfo> | any): CartItem | null =
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [isOrdering, setIsOrdering] = useState(false)
-  const [useServerCart, setUseServerCart] = useState(false)
   const [cartError, setCartError] = useState<string | null>(null)
   const [orderError, setOrderError] = useState<string | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
@@ -66,70 +63,10 @@ export default function CartPage() {
   // const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // API 버전 참고용
-    // const fetchCart = async () => {
-    //   setIsLoading(true)
-    //   setError(null)
-    //   try {
-    //     const cart = await cartApi.getCart()
-    //     const list = Array.isArray(cart?.content) ? cart.content : []
-    //     setItems(
-    //       list.map((item) => ({
-    //         productId: item.productId,
-    //         name: "",
-    //         price: 0,
-    //         quantity: item.quantity,
-    //       }))
-    //     )
-    //     const productIds = Array.from(new Set(list.map((i) => i.productId)))
-    //     const fetched = await Promise.all(
-    //       productIds.map(async (pid) => {
-    //         try {
-    //           const product = await productApi.getProductDetail(pid)
-    //           return [pid, product] as const
-    //         } catch {
-    //           return null
-    //         }
-    //       })
-    //     )
-    //     const map = fetched.reduce<Record<string, ProductInfoResponse>>((acc, cur) => {
-    //       if (cur) acc[cur[0]] = cur[1]
-    //       return acc
-    //     }, {})
-    //     setProducts(map)
-    //   } catch (err: any) {
-    //     setError(err?.message || "장바구니를 불러오지 못했습니다.")
-    //   } finally {
-    //     setIsLoading(false)
-    //   }
-    // }
-    // fetchCart()
-
-    if (typeof window === "undefined") return
-
     let cancelled = false
 
-    const hydrateFromStorage = () => {
-      setUseServerCart(false)
-      const stored = localStorage.getItem(CART_STORAGE_KEY)
-      if (!stored) {
-        setItems([])
-        return
-      }
-      try {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed)) {
-          const normalized = parsed
-            .map((item) => normalizeCartItem(item))
-            .filter(Boolean) as CartItem[]
-          setItems(normalized)
-        }
-      } catch {
-        setItems([])
-      }
-    }
-
     const fetchCart = async () => {
+      setCartError(null)
       try {
         const cart = await cartApi.getCart()
         const list = Array.isArray(cart?.content) ? cart.content : []
@@ -139,15 +76,17 @@ export default function CartPage() {
 
         if (!cancelled) {
           setItems(normalized)
-          setUseServerCart(true)
-          setIsInitialized(true)
           setCartError(null)
         }
       } catch (error) {
         console.error("장바구니 불러오기 실패", error)
         if (!cancelled) {
-          hydrateFromStorage()
-          setIsInitialized(true)
+          setItems([])
+          setCartError("장바구니를 불러오지 못했습니다.")
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
         }
       }
     }
@@ -158,11 +97,6 @@ export default function CartPage() {
       cancelled = true
     }
   }, [])
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !isInitialized) return
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
-  }, [items, isInitialized])
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -181,6 +115,10 @@ export default function CartPage() {
   const updateQuantity = async (id: string, delta: number) => {
     const target = items.find((item) => item.productId === id)
     if (!target) return
+    if (!target.id) {
+      setCartError("장바구니 항목 ID가 없어 수량을 수정할 수 없습니다.")
+      return
+    }
     setCartError(null)
     const nextQty = Math.max(1, target.quantity + delta)
     if (nextQty === target.quantity) return
@@ -189,24 +127,19 @@ export default function CartPage() {
       const updated = prev.map((item) =>
         item.productId === id ? { ...item, quantity: nextQty } : item
       )
-      if (typeof window !== "undefined") {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updated))
-      }
       return updated
     })
 
-    if (useServerCart && target.id) {
-      try {
-        await cartApi.updateCartItem(target.id, nextQty)
-      } catch (error) {
-        console.error("수량 변경 실패", error)
-        setItems((prev) =>
-          prev.map((item) =>
-            item.productId === id ? { ...item, quantity: prevQty } : item
-          )
+    try {
+      await cartApi.updateCartItem(target.id, nextQty)
+    } catch (error) {
+      console.error("수량 변경 실패", error)
+      setItems((prev) =>
+        prev.map((item) =>
+          item.productId === id ? { ...item, quantity: prevQty } : item
         )
-        setCartError("수량 변경에 실패했어요. 잠시 후 다시 시도해주세요.")
-      }
+      )
+      setCartError("수량 변경에 실패했어요. 잠시 후 다시 시도해주세요.")
     }
   }
 
@@ -220,26 +153,21 @@ export default function CartPage() {
       const updated = prev.filter(
         (item) => !selectedIds.includes(item.productId)
       )
-      if (typeof window !== "undefined") {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(updated))
-      }
       return updated
     })
     setSelectedIds([])
 
-    if (useServerCart) {
-      try {
-        await Promise.all(
-          targets.map((item) =>
-            item.id ? cartApi.removeCartItem(item.id) : Promise.resolve()
-          )
+    try {
+      await Promise.all(
+        targets.map((item) =>
+          item.id ? cartApi.removeCartItem(item.id) : Promise.resolve()
         )
-      } catch (error) {
-        console.error("선택 삭제 실패", error)
-        setItems(previousItems)
-        setSelectedIds(previousSelectedIds)
-        setCartError("선택한 상품을 삭제하지 못했습니다.")
-      }
+      )
+    } catch (error) {
+      console.error("선택 삭제 실패", error)
+      setItems(previousItems)
+      setSelectedIds(previousSelectedIds)
+      setCartError("선택한 상품을 삭제하지 못했습니다.")
     }
   }
 
@@ -249,25 +177,15 @@ export default function CartPage() {
     const previousSelectedIds = selectedIds
     setItems([])
     setSelectedIds([])
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(CART_STORAGE_KEY)
-    }
 
-    if (useServerCart) {
-      try {
-        await cartApi.clearCart()
-      } catch (error) {
-        console.error("장바구니 비우기 실패", error)
-        setItems(previousItems)
-        setSelectedIds(previousSelectedIds)
-        setCartError("장바구니를 비우지 못했습니다.")
-      }
+    try {
+      await cartApi.clearCart()
+    } catch (error) {
+      console.error("장바구니 비우기 실패", error)
+      setItems(previousItems)
+      setSelectedIds(previousSelectedIds)
+      setCartError("장바구니를 비우지 못했습니다.")
     }
-  }
-
-  const handleManualSync = () => {
-    if (typeof window === "undefined") return
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
   }
 
   const allSelected = items.length > 0 && selectedIds.length === items.length
@@ -341,7 +259,11 @@ export default function CartPage() {
           </div>
         )}
 
-        {items.length === 0 ? (
+        {isLoading ? (
+          <Card className="p-10 text-center text-muted-foreground">
+            장바구니를 불러오는 중입니다...
+          </Card>
+        ) : items.length === 0 ? (
           <Card className="p-10 text-center">
             <p className="text-muted-foreground mb-4">
               장바구니가 비어 있어요. 마음에 드는 상품을 추가해보세요!

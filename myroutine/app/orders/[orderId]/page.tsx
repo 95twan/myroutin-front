@@ -11,33 +11,6 @@ import {
   OrderType,
 } from "@/lib/api/order"
 
-const MOCK_ORDER_DETAIL: OrderDetailInfo = {
-  orderId: "mock-order-1",
-  orderNum: "MOCK0001",
-  orderDate: "2024-01-15",
-  status: OrderStatus.PAID,
-  orderType: OrderType.NORMAL,
-  totalAmount: 18900,
-  orderedItems: [
-    {
-      productId: "mock-product-1",
-      productName: "프리미엄 샐러드 구독",
-      imgUrl: "/vibrant-mixed-salad.png",
-      unitPrice: 9450,
-      quantity: 2,
-      totalPrice: 18900,
-    },
-  ],
-  deliveryInfo: {
-    recipientName: "홍길동",
-    recipientAddress: "서울시 성동구 성수동 123-45",
-  },
-  paymentInfo: {
-    paidAmount: 18900,
-    transactionDate: "2024-01-15T09:00:00Z",
-  },
-}
-
 const formatDate = (value: string) => {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
@@ -66,15 +39,8 @@ export default function OrderDetailPage() {
         const data = await orderApi.getOrderDetail(orderId)
         setOrder(data)
       } catch (err: any) {
-        setError(
-          err?.message ||
-            "주문 상세를 불러오지 못했습니다. 목 데이터를 표시합니다."
-        )
-        setOrder({
-          ...MOCK_ORDER_DETAIL,
-          orderId,
-          orderNum: orderId,
-        })
+        setError(err?.message || "주문 상세를 불러오지 못했습니다.")
+        setOrder(null)
       } finally {
         setIsLoading(false)
       }
@@ -96,6 +62,16 @@ export default function OrderDetailPage() {
       <div className="container mx-auto px-4 py-12">
         <Card className="p-6 text-muted-foreground">
           주문 정보를 불러오는 중입니다...
+        </Card>
+      </div>
+    )
+  }
+
+  if (!isLoading && !order) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <Card className="p-6 text-muted-foreground">
+          주문 정보를 불러오지 못했습니다.
         </Card>
       </div>
     )

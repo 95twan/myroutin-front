@@ -11,29 +11,12 @@ import { orderApi, OrderType } from "@/lib/api/order"
 import { type ProductInfoResponse, productApi } from "@/lib/api/product"
 import { getCategoryLabel } from "@/lib/categories"
 import { Input } from "@/components/ui/input"
-// import { cartApi } from "@/lib/api-client"
-
-const mockProduct: ProductInfoResponse = {
-  id: "1",
-  shopId: "1",
-  name: "프리미엄 샐러드 구독",
-  description:
-    "매일 아침 신선하게 배달되는 샐러드입니다. 신선한 야채와 드레싱을 다양하게 제공합니다.",
-  price: 8900,
-  stock: 0,
-  status: "ON_SALE",
-  category: "FOOD_BEVERAGE",
-  thumbnailUrl: "/placeholder.svg?key=gqzfh",
-  createdAt: new Date().toISOString(),
-  modifiedAt: new Date().toISOString(),
-}
-
-const CART_STORAGE_KEY = "mockCart"
+import { cartApi } from "@/lib/api/cart"
 
 export default function ProductDetailPage() {
   const routeParams = useParams<{ id: string }>()
   const id = (routeParams?.id as string) || ""
-  const [product, setProduct] = useState<ProductInfoResponse>(mockProduct)
+  const [product, setProduct] = useState<ProductInfoResponse | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [showSubscriptionForm, setShowSubscriptionForm] = useState(false)
   const [showOrderModal, setShowOrderModal] = useState(false)
@@ -45,41 +28,14 @@ export default function ProductDetailPage() {
   const [error, setError] = useState<string | null>(null)
 
   const handleAddToCart = () => {
-    // TODO: 실제 장바구니 API 연결 시 아래 코드 사용
-    // cartApi
-    //   .addToCart({ productId: product.id?.toString() || id, quantity })
-    //   .then(() => toast.success("장바구니에 담았어요!"))
-    //   .catch(() => toast.error("장바구니 담기 실패"))
-
-    const cartItem = {
-      productId: product.id?.toString() || id,
-      name: product.name,
-      price: productPrice,
-      quantity,
-      thumbnailUrl: product.thumbnailUrl,
-    }
-    if (typeof window !== "undefined") {
-      const prev = localStorage.getItem(CART_STORAGE_KEY)
-      let parsed: any[] = []
-      if (prev) {
-        try {
-          parsed = JSON.parse(prev)
-        } catch {
-          parsed = []
-        }
-      }
-      const existingIndex = parsed.findIndex(
-        (item) => item.productId === cartItem.productId
+    if (!product?.id && !id) return
+    setError(null)
+    cartApi
+      .addToCart({ productId: (product?.id ?? id).toString(), quantity })
+      .then(() => alert("장바구니에 담았어요!"))
+      .catch((err: any) =>
+        setError(err?.message || "장바구니 담기에 실패했습니다.")
       )
-      if (existingIndex >= 0) {
-        parsed[existingIndex].quantity =
-          (parsed[existingIndex].quantity || 0) + quantity
-      } else {
-        parsed.push(cartItem)
-      }
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(parsed))
-      alert("장바구니에 담았어요! (목업)")
-    }
   }
 
   useEffect(() => {
@@ -90,18 +46,14 @@ export default function ProductDetailPage() {
       try {
         const data = await productApi.getProductDetail(id)
         setProduct({
-          ...mockProduct,
           ...data,
-          id: data.id ?? id ?? mockProduct.id,
-          price: data.price ?? mockProduct.price,
-          thumbnailUrl: data.thumbnailUrl ?? mockProduct.thumbnailUrl,
+          id: data.id ?? id,
+          price: data.price ?? 0,
+          thumbnailUrl: data.thumbnailUrl ?? "/placeholder.svg",
         })
       } catch (err: any) {
-        setError(
-          err?.message ||
-            "상품 정보를 불러오지 못했습니다. 더미 데이터를 표시합니다."
-        )
-        setProduct(mockProduct)
+        setError(err?.message || "상품 정보를 불러오지 못했습니다.")
+        setProduct(null)
       } finally {
         setIsLoading(false)
       }
@@ -110,14 +62,18 @@ export default function ProductDetailPage() {
     fetchProduct()
   }, [id])
 
-  const toNumber = (value: number | string | undefined) => {
+  const toNumber = (value?: number | string) => {
     const num = typeof value === "string" ? Number(value) : value ?? 0
     return Number.isFinite(num) ? num : 0
   }
 
-  const productPrice = toNumber(product.price)
+  const productPrice = toNumber(product?.price)
   const displayPrice = (price: number) => `₩${price.toLocaleString()}`
   const handleOrder = async () => {
+    if (!product?.id) {
+      setOrderError("상품 정보를 불러올 수 없습니다.")
+      return
+    }
     if (!recipientName.trim() || !recipientAddress.trim()) {
       setOrderError("수령인 이름과 주소를 입력해주세요.")
       return
@@ -152,6 +108,30 @@ export default function ProductDetailPage() {
     } finally {
       setIsOrdering(false)
     }
+  }
+
+  if (isLoading && !product) {
+    return (
+      <main className="flex-1">
+        <div className="container mx-auto px-4 py-8">
+          <Card className="p-8 text-center text-muted-foreground">
+            상품 정보를 불러오는 중입니다...
+          </Card>
+        </div>
+      </main>
+    )
+  }
+
+  if (!product) {
+    return (
+      <main className="flex-1">
+        <div className="container mx-auto px-4 py-8">
+          <Card className="p-8 text-center text-muted-foreground">
+            {error || "상품 정보를 불러올 수 없습니다."}
+          </Card>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -307,7 +287,7 @@ export default function ProductDetailPage() {
               <p className="text-sm text-muted-foreground">
                 결제 예정 금액:{" "}
                 <span className="text-foreground font-semibold">
-                  {displayPrice(product.price * quantity)}
+                  {displayPrice(productPrice * quantity)}
                 </span>
               </p>
               <div className="pt-2 space-y-3">
