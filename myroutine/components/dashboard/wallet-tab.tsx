@@ -19,7 +19,6 @@ interface Transaction {
   description: string
   date?: string
   status?: string
-  reference?: string
 }
 
 type TransactionFilter = "all" | "use" | "charge"
@@ -61,7 +60,6 @@ export default function WalletTab() {
       amount: item.amount,
       description: item.settlementId ? `정산 ${item.settlementId}` : "입금",
       date: item.createdAt,
-      reference: item.settlementId,
     }))
 
     const withdrawTransactions: Transaction[] = withdraws.map((item) => ({
@@ -71,7 +69,6 @@ export default function WalletTab() {
       description: "결제",
       date: item.createdAt,
       status: item.state,
-      reference: item.orderId,
     }))
 
     return [...depositTransactions, ...withdrawTransactions].sort((a, b) => {
@@ -376,13 +373,6 @@ export default function WalletTab() {
                       >
                         {tx.description}
                       </p>
-                      {tx.reference && (
-                        <p className="text-sm text-muted-foreground flex gap-2 flex-wrap">
-                          <span className="text-xs bg-muted px-2 py-1 rounded-full border">
-                            {tx.reference}
-                          </span>
-                        </p>
-                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -409,12 +399,9 @@ export default function WalletTab() {
                         {tx.amount.toLocaleString()}
                       </p>
                       {isRefunded && (
-                        <div className="flex items-center gap-1 text-sm font-semibold text-green-600">
-                          <span className="text-xs bg-green-50 border border-green-200 rounded px-2 py-0.5">
-                            환불
-                          </span>
-                          <span>+₩{tx.amount.toLocaleString()}</span>
-                        </div>
+                        <span className="text-sm font-semibold text-green-600">
+                          +₩{tx.amount.toLocaleString()}
+                        </span>
                       )}
                     </div>
                   </div>
