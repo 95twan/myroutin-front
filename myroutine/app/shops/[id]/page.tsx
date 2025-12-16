@@ -12,6 +12,7 @@ import { settlementApi, type SettlementListDetailInfo } from "@/lib/api/settleme
 import { Mail, Phone, MapPin, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { CATEGORY_OPTIONS } from "@/lib/categories"
+import { getImageUrl } from "@/lib/image"
 
 export default function ShopDetailPage() {
   const routeParams = useParams<{ id: string }>()
@@ -615,13 +616,13 @@ export default function ShopDetailPage() {
                       className="grid grid-cols-[80px_1fr] gap-3 p-4 items-center hover:bg-muted/60 cursor-pointer"
                       onClick={() => openProductModal(product)}
                     >
-                      <div className="w-20 h-16 rounded-md bg-muted overflow-hidden">
-                        <img
-                          src={product.thumbnailUrl || "/placeholder.svg"}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+                    <div className="w-20 h-16 rounded-md bg-muted overflow-hidden">
+                      <img
+                        src={getImageUrl(product.thumbnailUrl) || "/placeholder.svg"}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                       <div className="space-y-1">
                         <p className="font-semibold text-foreground line-clamp-2">
                           {product.name}
@@ -657,7 +658,7 @@ export default function ShopDetailPage() {
               <div className="md:col-span-2 flex items-center gap-3">
                 <div className="w-24 h-20 rounded-md bg-muted overflow-hidden">
                   <img
-                    src={productForm.thumbnailUrl || "/placeholder.svg"}
+                    src={getImageUrl(productForm.thumbnailUrl) || "/placeholder.svg"}
                     alt={productForm.name}
                     className="w-full h-full object-cover"
                   />
