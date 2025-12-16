@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { CATEGORY_OPTIONS } from "@/lib/categories"
+import { ProductSearchSort } from "@/lib/api/product"
 
 interface SidebarProps {
   selectedCategory: string | null
@@ -14,6 +15,8 @@ interface SidebarProps {
   priceRange: [number, number]
   onPriceChange: (range: [number, number]) => void
   defaultPriceBounds: [number, number]
+  sort: ProductSearchSort
+  onSortChange: (sort: ProductSearchSort) => void
 }
 
 export default function Sidebar({
@@ -22,6 +25,8 @@ export default function Sidebar({
   priceRange,
   onPriceChange,
   defaultPriceBounds,
+  sort,
+  onSortChange,
 }: SidebarProps) {
   const [minInput, setMinInput] = useState(priceRange[0].toString())
   const [maxInput, setMaxInput] = useState(priceRange[1].toString())
@@ -121,6 +126,33 @@ export default function Sidebar({
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-border" />
+
+        {/* Sort */}
+        <div className="space-y-2">
+          <h3 className="font-bold text-lg text-foreground">정렬</h3>
+          <div className="space-y-2">
+            {[
+              { value: ProductSearchSort.LATEST, label: "최신순" },
+              { value: ProductSearchSort.LOW_PRICE, label: "낮은 가격순" },
+              { value: ProductSearchSort.HIGH_PRICE, label: "높은 가격순" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onSortChange(opt.value)}
+                className={`w-full text-left px-3 py-2 rounded-md border text-sm transition ${
+                  sort === opt.value
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-border text-foreground hover:bg-muted/60"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
       </Card>

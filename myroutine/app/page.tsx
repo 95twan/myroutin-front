@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import ProductGrid from "@/components/product-grid"
 import Sidebar from "@/components/sidebar"
 import { useRouter, useSearchParams } from "next/navigation"
+import { ProductSearchSort } from "@/lib/api/product"
 
 const BASE_PRICE_BOUNDS: [number, number] = [0, 100000]
 
@@ -16,12 +17,20 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [priceRange, setPriceRange] = useState<[number, number]>(BASE_PRICE_BOUNDS)
+  const [sort, setSort] = useState<ProductSearchSort>(
+    ProductSearchSort.LATEST
+  )
 
   const syncFromParams = () => {
     const q = searchParams.get("q") || ""
     const category = searchParams.get("category")
+    const sortParam = searchParams.get("sort") as ProductSearchSort | null
+    const nextSort = sortParam && Object.values(ProductSearchSort).includes(sortParam)
+      ? sortParam
+      : ProductSearchSort.LATEST
     setSearchQuery(q)
     setSelectedCategory(category)
+    setSort(nextSort)
   }
 
   useEffect(() => {
@@ -36,6 +45,17 @@ export default function Home() {
       params.set("category", next)
     } else {
       params.delete("category")
+    }
+    router.push(`/?${params.toString()}`)
+  }
+
+  const handleSortChange = (next: ProductSearchSort) => {
+    setSort(next)
+    const params = new URLSearchParams(searchParams.toString())
+    if (next && next !== ProductSearchSort.LATEST) {
+      params.set("sort", next)
+    } else {
+      params.delete("sort")
     }
     router.push(`/?${params.toString()}`)
   }
@@ -65,6 +85,8 @@ export default function Home() {
               priceRange={priceRange}
               onPriceChange={setPriceRange}
               defaultPriceBounds={BASE_PRICE_BOUNDS}
+              sort={sort}
+              onSortChange={handleSortChange}
             />
           </aside>
 
@@ -89,6 +111,7 @@ export default function Home() {
               searchQuery={searchTerm}
               category={selectedCategory}
               priceRange={priceRange}
+              sort={sort}
             />
           </div>
         </div>
