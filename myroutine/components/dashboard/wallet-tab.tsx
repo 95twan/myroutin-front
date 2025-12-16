@@ -43,8 +43,12 @@ export default function WalletTab() {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [cancelingKey, setCancelingKey] = useState<string | null>(null)
-  const [selectedPayment, setSelectedPayment] = useState<PaymentInfo | null>(null)
-  const [selectedPaymentError, setSelectedPaymentError] = useState<string | null>(null)
+  const [selectedPayment, setSelectedPayment] = useState<PaymentInfo | null>(
+    null
+  )
+  const [selectedPaymentError, setSelectedPaymentError] = useState<
+    string | null
+  >(null)
 
   const mergeTransactions = (
     deposits: WalletDepositInfo[],
@@ -260,15 +264,9 @@ export default function WalletTab() {
         <p className="text-5xl font-bold text-primary mb-6">
           ₩{balance.toLocaleString()}
         </p>
-        {error && (
-          <p className="text-sm text-red-600 mb-2">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
         {walletError && (
-          <p className="text-sm text-red-600 mb-2">
-            {walletError}
-          </p>
+          <p className="text-sm text-red-600 mb-2">{walletError}</p>
         )}
         <div className="flex flex-col sm:flex-row gap-2">
           <Link href="/wallet/charge" className="flex-1">
@@ -293,9 +291,9 @@ export default function WalletTab() {
         </div>
       </Card>
 
-      {/* Transaction History */}
+      {/* Settlement History */}
       <Card className="p-6 md:p-8">
-        <h3 className="text-2xl font-bold text-foreground mb-6">거래 내역</h3>
+        <h3 className="text-2xl font-bold text-foreground mb-6">예치금 내역</h3>
         <div className="flex gap-2 mb-4">
           <Button
             size="sm"
@@ -325,17 +323,17 @@ export default function WalletTab() {
               setPage(0)
             }}
           >
-            충전
+            정산
           </Button>
         </div>
         {isLoading && (
           <p className="text-sm text-muted-foreground mb-4">
-            거래 내역을 불러오는 중입니다...
+            예치금 내역을 불러오는 중입니다...
           </p>
         )}
         {transactions.length === 0 && !isLoading ? (
           <p className="text-sm text-muted-foreground">
-            표시할 거래 내역이 없습니다.
+            표시할 예치금 내역이 없습니다.
           </p>
         ) : (
           <div className="space-y-3">
@@ -507,7 +505,9 @@ export default function WalletTab() {
                                 </p>
                               </div>
                               <div>
-                                <p className="text-muted-foreground">요청 시각</p>
+                                <p className="text-muted-foreground">
+                                  요청 시각
+                                </p>
                                 <p className="font-semibold text-foreground">
                                   {formatDate(
                                     pay.requestedAt || new Date().toISOString()
@@ -515,7 +515,9 @@ export default function WalletTab() {
                                 </p>
                               </div>
                               <div>
-                                <p className="text-muted-foreground">승인 시각</p>
+                                <p className="text-muted-foreground">
+                                  승인 시각
+                                </p>
                                 <p className="font-semibold text-foreground">
                                   {pay.approvedAt
                                     ? formatDate(pay.approvedAt)

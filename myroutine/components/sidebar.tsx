@@ -55,6 +55,33 @@ export default function Sidebar({
   return (
     <div className="space-y-6 sticky top-20">
       <Card className="p-6 space-y-3">
+        {/* Sort */}
+        <div className="space-y-2">
+          <h3 className="font-bold text-lg text-foreground">정렬</h3>
+          <div className="space-y-2">
+            {[
+              { value: ProductSearchSort.LATEST, label: "최신순" },
+              { value: ProductSearchSort.LOW_PRICE, label: "낮은 가격순" },
+              { value: ProductSearchSort.HIGH_PRICE, label: "높은 가격순" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onSortChange(opt.value)}
+                className={`w-full text-left px-3 py-2 rounded-md border text-sm transition ${
+                  sort === opt.value
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-border text-foreground hover:bg-muted/60"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="h-px bg-border" />
+
         {/* Category Filter */}
         <div>
           <h3 className="font-bold text-lg text-foreground mb-3">카테고리</h3>
@@ -126,33 +153,6 @@ export default function Sidebar({
                 />
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="h-px bg-border" />
-
-        {/* Sort */}
-        <div className="space-y-2">
-          <h3 className="font-bold text-lg text-foreground">정렬</h3>
-          <div className="space-y-2">
-            {[
-              { value: ProductSearchSort.LATEST, label: "최신순" },
-              { value: ProductSearchSort.LOW_PRICE, label: "낮은 가격순" },
-              { value: ProductSearchSort.HIGH_PRICE, label: "높은 가격순" },
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onSortChange(opt.value)}
-                className={`w-full text-left px-3 py-2 rounded-md border text-sm transition ${
-                  sort === opt.value
-                    ? "border-primary text-primary bg-primary/10"
-                    : "border-border text-foreground hover:bg-muted/60"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
           </div>
         </div>
       </Card>
