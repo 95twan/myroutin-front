@@ -32,6 +32,15 @@ const statusMeta = {
   UNAVAILABLE: { label: "불가", className: "bg-gray-100 text-gray-800" },
 }
 
+const normalizeSubscription = (data: SubscriptionInfo): SubscriptionInfo => {
+  const recurrenceType =
+    (data.recurrenceType || "WEEKLY").toString().toUpperCase() === "MONTHLY"
+      ? "MONTHLY"
+      : "WEEKLY"
+
+  return { ...data, recurrenceType }
+}
+
 export default function SubscriptionDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
@@ -62,13 +71,14 @@ export default function SubscriptionDetailPage() {
       setError(null)
       try {
         const data = await subscriptionApi.getSubscription(id)
-        setSubscription(data)
-        setQuantity(data.quantity || 1)
-        setAddress(data.deliveryAddress || "")
-        setRecurrenceType(data.recurrenceType)
-        setSelectedDays(data.dayOfWeek || [])
-        setSelectedDayOfMonth(data.dayOfMonth || 1)
-        setInitialDayCount((data.dayOfWeek || []).length)
+        const normalized = normalizeSubscription(data)
+        setSubscription(normalized)
+        setQuantity(normalized.quantity || 1)
+        setAddress(normalized.deliveryAddress || "")
+        setRecurrenceType(normalized.recurrenceType)
+        setSelectedDays(normalized.dayOfWeek || [])
+        setSelectedDayOfMonth(normalized.dayOfMonth || 1)
+        setInitialDayCount((normalized.dayOfWeek || []).length)
       } catch (err: any) {
         console.error("Failed to fetch subscription.", err)
         setError("구독 정보를 불러올 수 없습니다.")
@@ -97,13 +107,14 @@ export default function SubscriptionDetailPage() {
       }
 
       if (updated) {
-        setSubscription(updated)
-        setQuantity(updated.quantity || 1)
-        setAddress(updated.deliveryAddress || "")
-        setRecurrenceType(updated.recurrenceType)
-        setSelectedDays(updated.dayOfWeek || [])
-        setSelectedDayOfMonth(updated.dayOfMonth || 1)
-        setInitialDayCount((updated.dayOfWeek || []).length)
+        const normalized = normalizeSubscription(updated)
+        setSubscription(normalized)
+        setQuantity(normalized.quantity || 1)
+        setAddress(normalized.deliveryAddress || "")
+        setRecurrenceType(normalized.recurrenceType)
+        setSelectedDays(normalized.dayOfWeek || [])
+        setSelectedDayOfMonth(normalized.dayOfMonth || 1)
+        setInitialDayCount((normalized.dayOfWeek || []).length)
       }
     } catch (err: any) {
       alert(err?.message || "처리 중 오류가 발생했습니다.")
@@ -165,12 +176,13 @@ export default function SubscriptionDetailPage() {
         subscription.id,
         payload
       )
-      setSubscription(updated)
-      setQuantity(updated.quantity || 1)
-      setAddress(updated.deliveryAddress || "")
-      setRecurrenceType(updated.recurrenceType)
-      setSelectedDays(updated.dayOfWeek || [])
-      setSelectedDayOfMonth(updated.dayOfMonth || 1)
+      const normalized = normalizeSubscription(updated)
+      setSubscription(normalized)
+      setQuantity(normalized.quantity || 1)
+      setAddress(normalized.deliveryAddress || "")
+      setRecurrenceType(normalized.recurrenceType)
+      setSelectedDays(normalized.dayOfWeek || [])
+      setSelectedDayOfMonth(normalized.dayOfMonth || 1)
       alert("구독 정보가 수정되었습니다.")
     } catch (err: any) {
       alert(err?.message || "수정 중 오류가 발생했습니다.")
@@ -199,6 +211,15 @@ export default function SubscriptionDetailPage() {
 
   const status = subscription?.subscriptionStatus || "ACTIVE"
   const statusInfo = statusMeta[status as keyof typeof statusMeta]
+  const isEditable =
+    status !== "CANCELLED" && status !== "FAILED" && status !== "UNAVAILABLE"
+
+  useEffect(() => {
+    if (!isEditable && isEditing) {
+      setIsEditing(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditable])
 
   const displayDays = useMemo(() => {
     if (!subscription) return ""
@@ -369,7 +390,7 @@ export default function SubscriptionDetailPage() {
                 </p>
               )}
             </div>
-            {!isEditing && (
+            {isEditable && !isEditing && (
               <Button
                 variant="outline"
                 size="sm"
@@ -381,7 +402,7 @@ export default function SubscriptionDetailPage() {
             )}
           </div>
 
-          {isEditing && (
+          {isEditable && isEditing && (
             <div className="border-t border-border pt-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-foreground">
