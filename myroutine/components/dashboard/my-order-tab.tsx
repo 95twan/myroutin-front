@@ -16,8 +16,10 @@ type OrderCard = {
   id: string
   productName: string
   productImage: string
+  productImages: string[]
   totalPrice: number
   amount: number
+  itemCount: number
   date: string
   orderNumber: string
   status?: string
@@ -33,17 +35,23 @@ const toOrderCard = (
   const totalQuantity =
     order.orderedItems?.reduce((acc, item) => acc + (item.quantity ?? 0), 0) ||
     0
+  const itemCount = order.orderedItems?.length || 0
+  const productImages =
+    order.orderedItems
+      ?.map((item) => getImageUrl(item.imgUrl) || "/placeholder.svg")
+      .filter(Boolean) || []
 
   return {
     id: order.orderId || order.orderNum || String(fallbackIndex),
     productName: firstItem?.productName || "상품명 없음",
-    productImage:
-      getImageUrl(firstItem?.imgUrl) || "/placeholder.svg",
+    productImage: getImageUrl(firstItem?.imgUrl) || "/placeholder.svg",
+    productImages: productImages.slice(0, 4),
     totalPrice:
       typeof order.totalAmount === "number"
         ? order.totalAmount
         : firstItem?.totalPrice || 0,
     amount: totalQuantity || 1,
+    itemCount: itemCount || 1,
     date: order.orderDate || "",
     orderNumber: order.orderNum || order.orderId || String(fallbackIndex),
     status: order.status || "",
@@ -54,6 +62,27 @@ const formatDate = (value: string) => {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
   return parsed.toISOString().slice(0, 10)
+}
+
+const buildMosaicSlots = (images: string[]) => {
+  const slots = Array<string | null>(4).fill(null)
+  if (images.length >= 4) return images.slice(0, 4)
+  if (images.length === 3) {
+    const layout = [1, 2, 3]
+    layout.forEach((idx, i) => {
+      slots[idx] = images[i]
+    })
+    return slots
+  }
+  if (images.length === 2) {
+    const layout = [1, 2]
+    layout.forEach((idx, i) => {
+      slots[idx] = images[i]
+    })
+    return slots
+  }
+  if (images.length === 1) return [images[0], null, null, null]
+  return slots
 }
 
 export default function OrdersTab() {
@@ -121,11 +150,34 @@ export default function OrdersTab() {
             >
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-shrink-0">
-                  <img
-                    src={order.productImage || "/placeholder.svg"}
-                    alt={order.productName}
-                    className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg"
-                  />
+                  {order.productImages.length <= 1 ? (
+                    <img
+                      src={order.productImage || "/placeholder.svg"}
+                      alt={order.productName}
+                      className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1 w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-muted">
+                      {buildMosaicSlots(order.productImages).map(
+                        (img, slot) => (
+                          <div
+                            key={`${order.id}-img-${slot}`}
+                            className="w-full h-full bg-muted"
+                          >
+                            {img ? (
+                              <img
+                                src={img}
+                                alt={`${order.productName} 이미지 ${slot + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-muted" />
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1">
@@ -137,6 +189,9 @@ export default function OrdersTab() {
                       </div>
                       <h3 className="text-xl font-bold text-foreground">
                         {order.productName}
+                        {order.itemCount > 1
+                          ? ` 외 ${order.itemCount - 1}개 상품`
+                          : ""}
                       </h3>
                     </div>
                     <p className="text-2xl font-bold text-primary">
@@ -146,8 +201,10 @@ export default function OrdersTab() {
 
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <span className="font-medium text-foreground">수량:</span>{" "}
-                      {order.amount}개
+                      <span className="font-medium text-foreground">
+                        종류/수량:
+                      </span>{" "}
+                      {order.itemCount}종 / 총 {order.amount}개
                     </div>
                     <div className="h-3 w-px bg-border" />
                     <div className="flex items-center gap-1">
