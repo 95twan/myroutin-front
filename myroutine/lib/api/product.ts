@@ -73,10 +73,7 @@ export const productApi = {
   createProduct: (shopId: string, data: ProductRegisterRequest) =>
     apiClient.post(`/catalog-service/api/v1/shops/${shopId}/products`, data),
   updateProduct: (productId: string, data: ProductModifyRequest) =>
-    apiClient.patch(
-      `/catalog-service/api/v1/shops/products/${productId}`,
-      data
-    ),
+    apiClient.put(`/catalog-service/api/v1/shops/products/${productId}`, data),
   updateProductStatus: (productId: string, status: StatusRequest) =>
     apiClient.patch(
       `/catalog-service/api/v1/shops/products/${productId}/status`,
