@@ -148,7 +148,7 @@ export default function ProductDetailPage() {
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="flex items-center justify-center bg-muted rounded-lg h-80 lg:h-[480px] lg:sticky lg:top-24">
+          <div className="flex items-center justify-center bg-white rounded-lg h-80 lg:h-[480px] lg:sticky lg:top-24 border border-border/60">
             <img
               src={getImageUrl(product.thumbnailUrl) || "/placeholder.svg"}
               alt={product.name}

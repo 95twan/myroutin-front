@@ -287,7 +287,7 @@ export default function SubscriptionDetailPage() {
               <img
                 src={getImageUrl(subscription.thumbnailUrl) || "/placeholder.svg"}
                 alt={subscription.productName}
-                className="w-32 h-32 md:w-40 md:h-40 object-contain rounded-lg bg-white"
+                className="w-32 h-32 md:w-40 md:h-40 object-contain rounded-lg bg-white border border-border/60"
               />
             </div>
 

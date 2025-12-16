@@ -293,8 +293,12 @@ export default function CartPage() {
                     id="select-all"
                     checked={allSelected}
                     onCheckedChange={toggleSelectAll}
+                    className="h-5 w-5 border-2 border-primary/70 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
-                  <label htmlFor="select-all" className="text-sm text-foreground cursor-pointer">
+                  <label
+                    htmlFor="select-all"
+                    className="text-sm text-foreground cursor-pointer"
+                  >
                     전체 선택 ({selectedIds.length}/{items.length})
                   </label>
                 </div>
@@ -326,8 +330,9 @@ export default function CartPage() {
                       checked={selectedIds.includes(item.productId)}
                       onCheckedChange={() => toggleSelect(item.productId)}
                       aria-label={`${productName} 선택`}
+                      className="h-5 w-5 border-2 border-primary/70 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden">
+                    <div className="w-20 h-20 bg-white rounded-lg overflow-hidden border border-border/60">
                       <img
                         src={getImageUrl(item.thumbnailUrl) || "/placeholder.svg"}
                         alt={productName}

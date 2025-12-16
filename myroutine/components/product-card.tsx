@@ -19,7 +19,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Link href={`/product/${product.id}`}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
         {/* Image */}
-        <div className="relative w-full h-64 bg-muted overflow-hidden flex items-center justify-center">
+        <div className="relative w-full h-64 bg-white overflow-hidden flex items-center justify-center border-b border-border/50">
           <img
             src={product.image || "/placeholder.svg"}
             alt={product.name}

@@ -106,7 +106,7 @@ const renderMosaic = (images: string[], alt: string, orderId: string) => {
       "polygon(100% 0, 100% 100%, 0 100%)", // slash: left + bottom side
     ]
     return (
-      <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-muted">
+      <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-white border border-border/60">
         {[0, 1].map((idx) => (
           <img
             key={`${orderId}-diag-${idx}`}
@@ -128,7 +128,7 @@ const renderMosaic = (images: string[], alt: string, orderId: string) => {
       "polygon(0 100%, 100% 45%, 100% 100%)", // 하단 띠
     ]
     return (
-      <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-muted">
+      <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-white border border-border/60">
         {shapes.map((shape, idx) => (
           <img
             key={`${orderId}-diag3-${idx}`}
@@ -144,17 +144,17 @@ const renderMosaic = (images: string[], alt: string, orderId: string) => {
 
   // 4개 이상: 2x2 모자이크
   return (
-    <div className="grid grid-cols-2 grid-rows-2 gap-1 w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-muted">
+    <div className="grid grid-cols-2 grid-rows-2 gap-1 w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-white border border-border/60">
       {buildMosaicSlots(images).map((img, slot) => (
-        <div key={`${orderId}-img-${slot}`} className="w-full h-full bg-muted">
+        <div key={`${orderId}-img-${slot}`} className="w-full h-full bg-white">
           {img ? (
             <img
               src={img}
               alt={`${alt} 이미지 ${slot + 1}`}
-              className="w-full h-full object-contain bg-white"
+              className="w-full h-full object-contain"
             />
           ) : (
-            <div className="w-full h-full bg-muted" />
+            <div className="w-full h-full bg-white" />
           )}
         </div>
       ))}
