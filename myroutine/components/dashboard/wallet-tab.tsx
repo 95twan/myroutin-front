@@ -43,6 +43,8 @@ export default function WalletTab() {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [cancelingKey, setCancelingKey] = useState<string | null>(null)
+  const [selectedPayment, setSelectedPayment] = useState<PaymentInfo | null>(null)
+  const [selectedPaymentError, setSelectedPaymentError] = useState<string | null>(null)
 
   const mergeTransactions = (
     deposits: WalletDepositInfo[],
@@ -228,10 +230,10 @@ export default function WalletTab() {
 
   const handleCancelPayment = async (pay: PaymentInfo) => {
     if (!pay.paymentKey || !pay.orderId || !pay.amount) {
-      setPaymentError("취소할 결제 정보를 확인할 수 없습니다.")
+      setSelectedPaymentError("취소할 결제 정보를 확인할 수 없습니다.")
       return
     }
-    setPaymentError(null)
+    setSelectedPaymentError(null)
     setCancelingKey(pay.paymentKey)
     try {
       await paymentApi.cancelPayment({
@@ -240,8 +242,11 @@ export default function WalletTab() {
         amount: String(pay.amount),
       })
       await refreshPayments()
+      // 최신 데이터에서 다시 선택
+      const updated = payments.find((p) => p.paymentKey === pay.paymentKey)
+      setSelectedPayment(updated || null)
     } catch (err: any) {
-      setPaymentError(err?.message || "환불 요청에 실패했습니다.")
+      setSelectedPaymentError(err?.message || "환불 요청에 실패했습니다.")
     } finally {
       setCancelingKey(null)
     }
@@ -440,9 +445,13 @@ export default function WalletTab() {
               ) : (
                 <div className="space-y-3">
                   {payments.map((pay) => (
-                    <div
+                    <button
                       key={pay.paymentKey || pay.orderId || pay.memberId}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border"
+                      className="w-full text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border hover:border-primary/60 hover:bg-muted/40"
+                      onClick={() => {
+                        setSelectedPayment(pay)
+                        setSelectedPaymentError(null)
+                      }}
                     >
                       <div className="space-y-1">
                         <p className="font-bold text-foreground">
@@ -467,20 +476,8 @@ export default function WalletTab() {
                         <p className="font-bold text-lg text-primary">
                           +₩{(pay.amount || 0).toLocaleString()}
                         </p>
-                        {pay.status === PaymentStatus.CONFIRMED && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCancelPayment(pay)}
-                            disabled={cancelingKey === pay.paymentKey}
-                          >
-                            {cancelingKey === pay.paymentKey
-                              ? "처리 중..."
-                              : "환불 요청"}
-                          </Button>
-                        )}
                       </div>
-                    </div>
+                    </button>
                   ))}
                   <div className="flex items-center justify-center gap-4 pt-2">
                     <Button
@@ -505,6 +502,88 @@ export default function WalletTab() {
                       다음
                     </Button>
                   </div>
+                </div>
+              )}
+              {selectedPayment && (
+                <div className="mt-6 p-4 rounded-lg border border-border bg-muted/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">선택한 결제</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {selectedPayment.method
+                          ? `충전 (${selectedPayment.method})`
+                          : "충전"}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold border ${getPaymentStatusBadge(
+                        selectedPayment.status
+                      )}`}
+                    >
+                      {selectedPayment.status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">금액</p>
+                      <p className="font-semibold text-primary">
+                        ₩{(selectedPayment.amount || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">주문/결제키</p>
+                      <p className="font-mono text-foreground break-all">
+                        {selectedPayment.orderId || "-"}
+                      </p>
+                      <p className="font-mono text-foreground break-all">
+                        {selectedPayment.paymentKey || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">요청 시각</p>
+                      <p className="font-semibold text-foreground">
+                        {formatDate(
+                          selectedPayment.requestedAt ||
+                            new Date().toISOString()
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">승인 시각</p>
+                      <p className="font-semibold text-foreground">
+                        {selectedPayment.approvedAt
+                          ? formatDate(selectedPayment.approvedAt)
+                          : "-"}
+                      </p>
+                    </div>
+                    {selectedPayment.failReason && (
+                      <div className="sm:col-span-2">
+                        <p className="text-muted-foreground">실패 사유</p>
+                        <p className="font-semibold text-red-600">
+                          {selectedPayment.failReason}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {selectedPayment.status === PaymentStatus.CONFIRMED && (
+                    <div className="flex flex-col gap-2">
+                      {selectedPaymentError && (
+                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+                          {selectedPaymentError}
+                        </p>
+                      )}
+                      <Button
+                        variant="outline"
+                        onClick={() => handleCancelPayment(selectedPayment)}
+                        disabled={cancelingKey === selectedPayment.paymentKey}
+                        className="self-start"
+                      >
+                        {cancelingKey === selectedPayment.paymentKey
+                          ? "환불 요청 중..."
+                          : "환불 요청"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

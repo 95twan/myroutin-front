@@ -116,7 +116,7 @@ export const searchApi = {
     size?: number
   }) =>
     apiClient.get<PageResponse<ProductSearchResponse>>(
-      "/catalog-service/api/v1/search/products",
+      "/catalog-service/api/v1/search",
       { params }
     ),
 }
