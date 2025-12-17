@@ -187,7 +187,7 @@ class ApiClient {
       const redirect = encodeURIComponent(
         `${window.location.pathname}${window.location.search}`
       )
-      window.location.href = `/login?redirect=${redirect}`
+      window.location.replace(`/login?redirect=${redirect}`)
     }
   }
 

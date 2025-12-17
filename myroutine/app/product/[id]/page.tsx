@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import SubscriptionForm from "@/components/subscription-form"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { orderApi, OrderType } from "@/lib/api/order"
 import { type ProductInfoResponse, productApi } from "@/lib/api/product"
 import { getCategoryLabel } from "@/lib/categories"
@@ -15,6 +15,7 @@ import { cartApi } from "@/lib/api/cart"
 import { getImageUrl } from "@/lib/image"
 
 export default function ProductDetailPage() {
+  const router = useRouter()
   const routeParams = useParams<{ id: string }>()
   const id = (routeParams?.id as string) || ""
   const [product, setProduct] = useState<ProductInfoResponse | null>(null)
@@ -37,6 +38,19 @@ export default function ProductDetailPage() {
       .catch((err: any) =>
         setError(err?.message || "장바구니 담기에 실패했습니다.")
       )
+  }
+
+  const requireLogin = () => {
+    if (typeof window === "undefined") return false
+    const hasToken = !!localStorage.getItem("accessToken")
+    if (!hasToken) {
+      const redirect = encodeURIComponent(
+        `${window.location.pathname}${window.location.search}`
+      )
+      router.push(`/login?redirect=${redirect}`)
+      return false
+    }
+    return true
   }
 
   useEffect(() => {
@@ -204,14 +218,22 @@ export default function ProductDetailPage() {
                     variant="outline"
                     size="lg"
                     className="flex-1 h-12 bg-transparent"
-                    onClick={() => setShowOrderModal(true)}
+                    onClick={() => {
+                      if (requireLogin()) {
+                        setShowOrderModal(true)
+                      }
+                    }}
                   >
                     일반 구매
                   </Button>
                   <Button
                     size="lg"
                     className="flex-1 h-12 bg-primary hover:bg-primary/90"
-                    onClick={() => setShowSubscriptionForm(true)}
+                    onClick={() => {
+                      if (requireLogin()) {
+                        setShowSubscriptionForm(true)
+                      }
+                    }}
                   >
                     구독 신청
                   </Button>
