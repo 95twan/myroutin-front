@@ -29,6 +29,13 @@ export default function LoginPage() {
         )}&response_type=code&scope=email profile&state=${state}`
 
         window.location.href = googleAuthUrl
+      } else if (provider === "naver") {
+        const NAVER_CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID
+        const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_CLIENT_ID}&redirect_uri=${encodeURIComponent(
+          redirectUri
+        )}&state=${state}`
+
+        window.location.href = naverAuthUrl
       }
     } catch (error) {
       console.error(error)
@@ -78,6 +85,14 @@ export default function LoginPage() {
               className="w-full h-12 font-bold"
             >
               {isLoading ? "처리 중..." : "Google로 시작"}
+            </Button>
+            <Button
+              onClick={() => handleOAuthLogin("naver")}
+              disabled={isLoading}
+              variant="outline"
+              className="w-full h-12 font-bold border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+            >
+              {isLoading ? "처리 중..." : "네이버로 시작"}
             </Button>
           </div>
         </div>
