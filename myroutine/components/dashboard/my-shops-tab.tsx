@@ -12,9 +12,7 @@ import {
   shopApi,
   type ShopListResponse,
   type ShopRegisterRequest,
-  type ShopRegisterResponse,
 } from "@/lib/api/shop"
-import { persistAuthPayload } from "@/lib/api/auth"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { walletApi } from "@/lib/api/wallet"
@@ -98,15 +96,7 @@ export default function MyShopsTab() {
     setIsSubmitting(true)
     setError(null)
     try {
-      const res: ShopRegisterResponse = await shopApi.createShop(formData)
-
-      // 백엔드가 새 권한이 반영된 accessToken을 내려줄 경우 교체해준다.
-      if (res?.accessToken) {
-        persistAuthPayload({
-          accessToken: res.accessToken,
-          roles: res.memberRoles,
-        })
-      }
+      await shopApi.createShop(formData)
 
       await fetchShops(0)
       setFormData({

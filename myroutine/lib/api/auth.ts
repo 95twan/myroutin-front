@@ -4,13 +4,6 @@ export interface MemberInfo {
   id: string
   name: string
   status: string
-  roles: MemberRole[]
-}
-
-export enum MemberRole {
-  USER = "USER",
-  SELLER = "SELLER",
-  ADMIN = "ADMIN",
 }
 
 export interface LoginInfoResponse {
@@ -34,13 +27,12 @@ export const persistAuthPayload = (
     refreshToken?: string
     memberInfo?: MemberInfo
     memberId?: string
-    roles?: MemberRole[]
   },
   options: { emitEvent?: boolean } = {}
 ) => {
   if (typeof window === "undefined") return
 
-  const { accessToken, refreshToken, memberInfo, memberId, roles } = payload
+  const { accessToken, refreshToken, memberInfo, memberId } = payload
 
   if (accessToken) {
     apiClient.setAccessToken(accessToken)
@@ -52,10 +44,6 @@ export const persistAuthPayload = (
   const resolvedMemberId = memberInfo?.id || memberId
   if (resolvedMemberId) {
     localStorage.setItem("memberId", resolvedMemberId)
-  }
-  const resolvedRoles = memberInfo?.roles || roles
-  if (resolvedRoles) {
-    localStorage.setItem("memberRoles", JSON.stringify(resolvedRoles))
   }
 
   if (options.emitEvent !== false) {

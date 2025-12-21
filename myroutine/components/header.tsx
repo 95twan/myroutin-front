@@ -59,7 +59,6 @@ export default function Header() {
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
     localStorage.removeItem("memberId")
-    localStorage.removeItem("memberRoles")
     window.dispatchEvent(new Event("auth-changed"))
     setIsLoggedIn(false)
     router.push("/")

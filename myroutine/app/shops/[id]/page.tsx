@@ -5,13 +5,12 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { shopApi, type ShopInfoResponse, type ShopDeleteResponse } from "@/lib/api/shop"
+import { shopApi, type ShopInfoResponse } from "@/lib/api/shop"
 import {
   productApi,
   type ProductInfoResponse,
   ProductStatus,
 } from "@/lib/api/product"
-import { persistAuthPayload } from "@/lib/api/auth"
 import { settlementApi, type SettlementListDetailInfo } from "@/lib/api/settlement"
 import { Mail, Phone, MapPin, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -160,15 +159,7 @@ export default function ShopDetailPage() {
     setIsDeleting(true)
     setError(null)
     try {
-      const res: ShopDeleteResponse = await shopApi.deleteShop(id)
-
-      // 삭제 시 seller 권한 제거된 토큰이 내려오면 교체
-      if (res?.accessToken) {
-        persistAuthPayload({
-          accessToken: res.accessToken,
-          roles: res.memberRoles,
-        })
-      }
+      await shopApi.deleteShop(id)
 
       alert("상점이 삭제되었습니다.")
       router.push("/dashboard?tab=shops")
