@@ -62,6 +62,12 @@ export default function MyShopsTab() {
       setPage(typeof data?.number === "number" ? data.number : pageToLoad)
       setTotalPages(data?.totalPages && data.totalPages > 0 ? data.totalPages : 1)
     } catch (err: any) {
+      if (err?.status === 403) {
+        setShops([])
+        setPage(0)
+        setTotalPages(1)
+        return
+      }
       setError(err?.message || "상점 목록을 불러오지 못했습니다.")
     } finally {
       setIsLoading(false)
