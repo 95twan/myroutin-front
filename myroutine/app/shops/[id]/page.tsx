@@ -23,6 +23,74 @@ const PRODUCT_STATUS_OPTIONS = [
   { value: ProductStatus.DISCONTINUED, label: "판매중단" },
 ]
 
+const MAX_IMAGE_BYTES = 1 * 1024 * 1024
+const MAX_IMAGE_DIMENSION = 800
+const JPEG_QUALITY = 0.85
+
+const loadImage = (file: File) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve(img)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("이미지를 불러오지 못했습니다."))
+    }
+    img.src = url
+  })
+
+const prepareThumbnail = async (file: File) => {
+  const img = await loadImage(file)
+  const width = img.naturalWidth || img.width
+  const height = img.naturalHeight || img.height
+  const maxDim = Math.max(width, height)
+  const needsResize = maxDim > MAX_IMAGE_DIMENSION || file.size > MAX_IMAGE_BYTES
+
+  if (!needsResize) return file
+
+  const type = file.type || "image/png"
+  const isLossy = type === "image/jpeg" || type === "image/webp"
+  let scale = maxDim > MAX_IMAGE_DIMENSION ? MAX_IMAGE_DIMENSION / maxDim : 1
+  let quality = isLossy ? JPEG_QUALITY : undefined
+  let blob: Blob | null = null
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const targetWidth = Math.max(1, Math.round(width * scale))
+    const targetHeight = Math.max(1, Math.round(height * scale))
+    const canvas = document.createElement("canvas")
+    canvas.width = targetWidth
+    canvas.height = targetHeight
+    const ctx = canvas.getContext("2d")
+    if (!ctx) throw new Error("이미지 처리를 실패했습니다.")
+    ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+
+    blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, type, quality)
+    )
+
+    if (!blob) throw new Error("이미지 처리를 실패했습니다.")
+    if (blob.size <= MAX_IMAGE_BYTES) break
+
+    if (isLossy && typeof quality === "number" && quality > 0.5) {
+      quality = Math.max(0.5, Number((quality - 0.1).toFixed(2)))
+    } else {
+      scale *= 0.9
+    }
+  }
+
+  if (!blob || blob.size > MAX_IMAGE_BYTES) {
+    throw new Error("이미지 용량을 줄이지 못했습니다. 더 작은 이미지를 올려주세요.")
+  }
+
+  return new File([blob], file.name, {
+    type,
+    lastModified: file.lastModified,
+  })
+}
+
 export default function ShopDetailPage() {
   const routeParams = useParams<{ id: string }>()
   const id = (routeParams?.id as string) || ""
@@ -1061,15 +1129,24 @@ export default function ShopDetailPage() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0]
                     if (!file) return
-                    const url = URL.createObjectURL(file)
-                    if (thumbnailPreview) {
-                      URL.revokeObjectURL(thumbnailPreview)
+                    setCreateError(null)
+                    try {
+                      const processed = await prepareThumbnail(file)
+                      const url = URL.createObjectURL(processed)
+                      if (thumbnailPreview) {
+                        URL.revokeObjectURL(thumbnailPreview)
+                      }
+                      setThumbnailPreview(url)
+                      setThumbnailFile(processed)
+                    } catch (err: any) {
+                      setCreateError(
+                        err?.message ||
+                          "이미지 처리에 실패했습니다. 다시 시도해주세요."
+                      )
                     }
-                    setThumbnailPreview(url)
-                    setThumbnailFile(file)
                   }}
                   className="text-sm"
                 />
