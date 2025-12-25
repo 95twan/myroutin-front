@@ -12,18 +12,14 @@ services:
         NEXT_PUBLIC_S3_BASE_URL: ${NEXT_PUBLIC_S3_BASE_URL}
     env_file:
       - .env.front
-    expose:
-      - "5500"
+    ports:
+      - "5500:5500"
     restart: unless-stopped
 
   nginx:
     image: "jc21/nginx-proxy-manager:latest"
     network_mode: host
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "81:81"
-      - "443:443"
     volumes:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
