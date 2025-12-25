@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ""
 
 export interface ExceptionResponse {
   code: string
@@ -112,7 +111,10 @@ class ApiClient {
       headers?: Record<string, string>
     }
   ): Promise<T> {
-    const url = new URL(`${this.baseUrl}${endpoint}`)
+    const base =
+      this.baseUrl ||
+      (typeof window !== "undefined" ? window.location.origin : "http://localhost:8000")
+    const url = new URL(endpoint, base)
 
     // Add query parameters
     if (options?.params) {
