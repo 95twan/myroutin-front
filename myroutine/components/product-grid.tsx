@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import ProductCard from "@/components/product-card"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -60,8 +60,13 @@ export default function ProductGrid({
     priceRange?: [number, number]
     sort?: ProductSearchSort
   }>({ searchQuery, category, priceRange, sort })
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     const handler = setTimeout(() => {
       setDebouncedFilters({ searchQuery, category, priceRange, sort })
       setPage(0)
@@ -74,9 +79,15 @@ export default function ProductGrid({
       const defaultRange: [number, number] = [0, 100000]
       const currentRange = debouncedFilters.priceRange ?? defaultRange
       const isRangeChanged =
-        currentRange[0] !== defaultRange[0] || currentRange[1] !== defaultRange[1]
-      const hasFilter = !!debouncedFilters.searchQuery || !!debouncedFilters.category || isRangeChanged
-      const hasSort = (debouncedFilters.sort ?? ProductSearchSort.LATEST) !== ProductSearchSort.LATEST
+        currentRange[0] !== defaultRange[0] ||
+        currentRange[1] !== defaultRange[1]
+      const hasFilter =
+        !!debouncedFilters.searchQuery ||
+        !!debouncedFilters.category ||
+        isRangeChanged
+      const hasSort =
+        (debouncedFilters.sort ?? ProductSearchSort.LATEST) !==
+        ProductSearchSort.LATEST
       const shouldUseSearchApi = hasFilter || hasSort
 
       setIsLoading(true)
@@ -117,8 +128,8 @@ export default function ProductGrid({
             typeof rawPrice === "string"
               ? Number(rawPrice)
               : Number.isFinite(rawPrice)
-                ? (rawPrice as number)
-                : 0
+              ? (rawPrice as number)
+              : 0
 
           return {
             id: id?.toString() || String(idx),
@@ -134,7 +145,10 @@ export default function ProductGrid({
         })
         setProducts(normalized)
         setTotalPages(
-          data && !Array.isArray(data) && typeof data.totalPages === "number" && data.totalPages > 0
+          data &&
+            !Array.isArray(data) &&
+            typeof data.totalPages === "number" &&
+            data.totalPages > 0
             ? data.totalPages
             : 1
         )
@@ -180,7 +194,9 @@ export default function ProductGrid({
           </Button>
           <Button
             variant="outline"
-            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+            onClick={() =>
+              setPage((prev) => Math.min(totalPages - 1, prev + 1))
+            }
             disabled={page >= totalPages - 1 || isLoading}
           >
             다음
