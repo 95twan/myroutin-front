@@ -58,6 +58,15 @@ export default function AdminPage() {
   const [membersLoading, setMembersLoading] = useState(false)
   const [membersError, setMembersError] = useState<string | null>(null)
   const [membersRefreshKey, setMembersRefreshKey] = useState(0)
+  const [memberStatusOptions, setMemberStatusOptions] = useState<Status[] | null>(
+    null
+  )
+  const [memberStatusDrafts, setMemberStatusDrafts] = useState<
+    Record<string, Status>
+  >({})
+  const [memberActionLoadingId, setMemberActionLoadingId] = useState<
+    string | null
+  >(null)
   const [endpointsData, setEndpointsData] =
     useState<PageResponse<EndPointInfoResponse> | null>(null)
   const [endpointsLoading, setEndpointsLoading] = useState(false)
@@ -106,6 +115,34 @@ export default function AdminPage() {
 
     fetchMembers()
   }, [activeSection, membersRefreshKey])
+
+  useEffect(() => {
+    if (activeSection !== "members") return
+    const fetchMemberStatuses = async () => {
+      try {
+        const res = await adminApi.getMembersStatuses()
+        if (res?.statuses?.length) {
+          setMemberStatusOptions(res.statuses)
+        } else {
+          setMemberStatusOptions(null)
+        }
+      } catch {
+        setMemberStatusOptions(null)
+        // fallback to default enum list when status fetch fails
+      }
+    }
+
+    fetchMemberStatuses()
+  }, [activeSection])
+
+  useEffect(() => {
+    if (!membersData?.content) return
+    const nextDrafts: Record<string, Status> = {}
+    membersData.content.forEach((member) => {
+      nextDrafts[member.id] = member.status
+    })
+    setMemberStatusDrafts(nextDrafts)
+  }, [membersData])
 
   useEffect(() => {
     if (activeSection !== "paths") return
@@ -205,6 +242,24 @@ export default function AdminPage() {
       setEndpointsError(err?.message || "권한 URL을 삭제하지 못했습니다.")
     } finally {
       setEndpointActionLoading(false)
+    }
+  }
+
+  const handleMemberStatusChange = async (memberId: string) => {
+    const nextStatus = memberStatusDrafts[memberId]
+    const currentStatus = membersData?.content?.find(
+      (member) => member.id === memberId
+    )?.status
+    if (!nextStatus || !currentStatus || nextStatus === currentStatus) return
+    setMemberActionLoadingId(memberId)
+    setMembersError(null)
+    try {
+      await adminApi.modifyMemberStatus(memberId, nextStatus)
+      setMembersRefreshKey((prev) => prev + 1)
+    } catch (err: any) {
+      setMembersError(err?.message || "멤버 상태를 변경하지 못했습니다.")
+    } finally {
+      setMemberActionLoadingId(null)
     }
   }
 
@@ -325,6 +380,55 @@ export default function AdminPage() {
                               </Badge>
                             ))}
                           </div>
+                        </div>
+                        <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center">
+                          <div className="w-full md:w-48">
+                            <Select
+                              value={
+                                memberStatusDrafts[member.id] ?? member.status
+                              }
+                              onValueChange={(value) =>
+                                setMemberStatusDrafts((prev) => ({
+                                  ...prev,
+                                  [member.id]: value as Status,
+                                }))
+                              }
+                              disabled={
+                                memberActionLoadingId === member.id ||
+                                !memberStatusOptions?.length ||
+                                member.status === Status.DELETED
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="상태 선택" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(memberStatusOptions ?? []).map((status) => (
+                                  <SelectItem key={status} value={status}>
+                                    {statusLabels[status]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleMemberStatusChange(member.id)}
+                            disabled={
+                              memberActionLoadingId === member.id ||
+                              !memberStatusOptions?.length ||
+                              member.status === Status.DELETED ||
+                              (memberStatusDrafts[member.id] ?? member.status) ===
+                                member.status
+                            }
+                          >
+                            상태 변경
+                          </Button>
+                          {!memberStatusOptions?.length && (
+                            <span className="text-xs text-muted-foreground">
+                              상태 목록을 불러오지 못했습니다.
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}

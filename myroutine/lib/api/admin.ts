@@ -40,6 +40,10 @@ export interface EndPointRequest {
   pathPattern: string
 }
 
+export interface MemberStatusResponse {
+  statuses: Status[]
+}
+
 export const adminApi = {
   getRoles: () =>
     apiClient.get<RoleResponse>("/member-service/api/v1/admin/roles"),
@@ -47,6 +51,14 @@ export const adminApi = {
     apiClient.get<PageResponse<MemberInfoAdminResponse>>(
       "/member-service/api/v1/admin/members"
     ),
+  getMembersStatuses: () =>
+    apiClient.get<MemberStatusResponse>(
+      "/member-service/api/v1/admin/members/statuses"
+    ),
+  modifyMemberStatus: (id: string, status: Status) =>
+    apiClient.patch<void>(`/member-service/api/v1/admin/members/${id}/status`, {
+      status,
+    }),
   getEndPoints: (params?: { page?: number; size?: number; sort?: string }) =>
     apiClient.get<PageResponse<EndPointInfoResponse>>(
       "/member-service/api/v1/admin/endpoints",
