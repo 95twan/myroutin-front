@@ -82,6 +82,11 @@ export default function MyInfoTab() {
     }
   }
 
+  const handleStartEdit = () => {
+    setAddressDetail("")
+    setIsEditing(true)
+  }
+
   const handleDelete = async () => {
     if (!confirm("정말 탈퇴하시겠습니까? 모든 데이터가 삭제됩니다.")) return
     setIsDeleting(true)
@@ -107,7 +112,7 @@ export default function MyInfoTab() {
         <h2 className="text-2xl font-bold text-foreground">내 정보</h2>
         <Button
           variant={isEditing ? "default" : "outline"}
-          onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
+          onClick={() => (isEditing ? handleSave() : handleStartEdit())}
           className="gap-2"
         >
           <Save className="w-4 h-4" />
@@ -162,24 +167,30 @@ export default function MyInfoTab() {
           <label className="block text-sm font-bold text-foreground mb-2">
             배송지 주소
           </label>
-          <AddressSearchInput
-            id="address"
-            value={formData.address}
-            onChange={(value) =>
-              setFormData((prev) => ({ ...prev, address: value }))
-            }
-            disabled={!isEditing || isSaving || isLoading}
-            required
-            readOnly
-          />
-          <Input
-            id="addressDetail"
-            value={addressDetail}
-            onChange={(e) => setAddressDetail(e.target.value)}
-            disabled={!isEditing || isSaving || isLoading}
-            placeholder="상세 주소를 입력하세요"
-            className="h-10 mt-2"
-          />
+          {isEditing ? (
+            <>
+              <AddressSearchInput
+                id="address"
+                value={formData.address}
+                onChange={(value) =>
+                  setFormData((prev) => ({ ...prev, address: value }))
+                }
+                disabled={!isEditing || isSaving || isLoading}
+                required
+                readOnly
+              />
+              <Input
+                id="addressDetail"
+                value={addressDetail}
+                onChange={(e) => setAddressDetail(e.target.value)}
+                disabled={!isEditing || isSaving || isLoading}
+                placeholder="상세 주소를 입력하세요"
+                className="h-10 mt-2"
+              />
+            </>
+          ) : (
+            <p className="text-sm text-foreground">{formData.address || "-"}</p>
+          )}
         </div>
 
         {isEditing && (

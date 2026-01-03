@@ -45,8 +45,8 @@ export interface MemberStatusResponse {
 }
 
 export const adminApi = {
-  getRoles: () =>
-    apiClient.get<RoleResponse>("/member-service/api/v1/admin/roles"),
+  getMemberRoles: () =>
+    apiClient.get<RoleResponse>("/member-service/api/v1/admin/members/roles"),
   getMembers: () =>
     apiClient.get<PageResponse<MemberInfoAdminResponse>>(
       "/member-service/api/v1/admin/members"
