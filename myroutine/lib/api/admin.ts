@@ -1,16 +1,21 @@
 import { apiClient, type PageResponse } from "../api-client"
+import {
+  InquiryListResponse,
+  InquiryInfoResponse,
+  InquiryStatus,
+} from "./inquiry"
 
 export interface RoleResponse {
-  roles: Role[]
+  roles: MemberRole[]
 }
 
-export enum Role {
+export enum MemberRole {
   ADMIN = "ADMIN",
   USER = "USER",
   SELLER = "SELLER",
 }
 
-export enum Status {
+export enum MemberStatus {
   ACTIVE = "ACTIVE",
   BANNED = "BANNED",
   DELETED = "DELETED",
@@ -22,40 +27,45 @@ export interface MemberInfoAdminResponse {
   email: string
   phoneNumber: string
   address: string
-  roles: Role[]
-  status: Status
+  roles: MemberRole[]
+  status: MemberStatus
   createdAt: string
 }
 
 export interface EndPointInfoResponse {
   id: string
-  role: Role
+  role: MemberRole
   httpMethod: string
   pathPattern: string
 }
 
 export interface EndPointRequest {
-  role: Role
+  role: MemberRole
   httpMethod: string
   pathPattern: string
 }
 
 export interface MemberStatusResponse {
-  statuses: Status[]
+  statuses: MemberStatus[]
+}
+
+export interface InquiryAnswerRequest {
+  message: string
 }
 
 export const adminApi = {
   getMemberRoles: () =>
     apiClient.get<RoleResponse>("/member-service/api/v1/admin/members/roles"),
-  getMembers: () =>
+  getMembers: (params?: { page?: number; size?: number; sort?: string }) =>
     apiClient.get<PageResponse<MemberInfoAdminResponse>>(
-      "/member-service/api/v1/admin/members"
+      "/member-service/api/v1/admin/members",
+      { params }
     ),
   getMembersStatuses: () =>
     apiClient.get<MemberStatusResponse>(
       "/member-service/api/v1/admin/members/statuses"
     ),
-  modifyMemberStatus: (id: string, status: Status) =>
+  modifyMemberStatus: (id: string, status: MemberStatus) =>
     apiClient.patch<void>(`/member-service/api/v1/admin/members/${id}/status`, {
       status,
     }),
@@ -70,4 +80,32 @@ export const adminApi = {
     apiClient.put<void>(`/member-service/api/v1/admin/endpoints/${id}`, data),
   deleteEndPoint: (id: string) =>
     apiClient.delete<void>(`/member-service/api/v1/admin/endpoints/${id}`),
+  getInquiryListForAdmin: (params?: {
+    status?: InquiryStatus
+    page?: number
+    size?: number
+    sort?: string
+  }) =>
+    apiClient.get<PageResponse<InquiryListResponse>>(
+      "/member-service/api/v1/admin/inquiries",
+      { params }
+    ),
+  getInquiryInfoForAdmin: (inquiryId: string) =>
+    apiClient.get<InquiryInfoResponse>(
+      `/member-service/api/v1/admin/inquiries/${inquiryId}`
+    ),
+  createInquiryAnswer: (inquiryId: string, data: InquiryAnswerRequest) =>
+    apiClient.post<void>(
+      `/member-service/api/v1/admin/inquiries/${inquiryId}/answer`,
+      data
+    ),
+  modifyInquiryAnswer: (inquiryId: string, data: InquiryAnswerRequest) =>
+    apiClient.put<void>(
+      `/member-service/api/v1/admin/inquiries/${inquiryId}/answer`,
+      data
+    ),
+  deleteInquiryAnswer: (inquiryId: string) =>
+    apiClient.delete<void>(
+      `/member-service/api/v1/admin/inquiries/${inquiryId}/answer`
+    ),
 }

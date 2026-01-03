@@ -18,6 +18,7 @@ export enum InquiryCategory {
 export interface InquiryListResponse {
   id: string
   title: string
+  status: InquiryStatus
   inquiryCategory: InquiryCategory
 }
 
@@ -26,9 +27,22 @@ export interface InquiryInfoResponse {
   memberId: string
   title: string
   inquiryCategory: InquiryCategory
+  status: InquiryStatus
   message: string
   createdAt: string
   modifiedAt: string
+  inquiryAnswer?: InquiryAnswerResponse
+}
+
+export enum InquiryStatus {
+  RECEIVED = "RECEIVED",
+  IN_PROGRESS = "IN_PROGRESS",
+  ANSWERED = "ANSWERED",
+}
+
+export interface InquiryAnswerResponse {
+  id: string
+  message: string
 }
 
 const BASE_PATH = "/member-service/api/v1/inquiries"

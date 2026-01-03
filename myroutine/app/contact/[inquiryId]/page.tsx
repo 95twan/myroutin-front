@@ -18,6 +18,7 @@ import {
   inquiryApi,
   type InquiryInfoResponse,
   InquiryCategory,
+  InquiryStatus,
 } from "@/lib/api/inquiry"
 
 const categoryLabels: Record<InquiryCategory, string> = {
@@ -32,6 +33,15 @@ const categoryLabels: Record<InquiryCategory, string> = {
 const getCategoryLabel = (category: InquiryCategory | string) =>
   categoryLabels[category as InquiryCategory] ||
   categoryLabels[InquiryCategory.ETC]
+
+const statusLabels: Record<InquiryStatus, string> = {
+  [InquiryStatus.RECEIVED]: "접수",
+  [InquiryStatus.IN_PROGRESS]: "처리 중",
+  [InquiryStatus.ANSWERED]: "답변 완료",
+}
+
+const getStatusLabel = (status?: InquiryStatus | string) =>
+  status ? statusLabels[status as InquiryStatus] || status : "상태 없음"
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-"
@@ -63,6 +73,7 @@ export default function InquiryDetailPage() {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const isAnswered = data?.status === InquiryStatus.ANSWERED
 
   useEffect(() => {
     if (!inquiryId) return
@@ -126,9 +137,12 @@ export default function InquiryDetailPage() {
         <Card className="space-y-1 overflow-hidden">
           <div className="px-6 pb-4 flex flex-wrap items-start justify-between gap-4 border-b border-border/60">
             <div className="space-y-1">
-              <Badge variant="secondary">
-                {getCategoryLabel(data.inquiryCategory)}
-              </Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">
+                  {getCategoryLabel(data.inquiryCategory)}
+                </Badge>
+                <Badge variant="outline">{getStatusLabel(data.status)}</Badge>
+              </div>
               <h2 className="text-2xl font-bold text-foreground">
                 {data.title}
               </h2>
@@ -152,6 +166,7 @@ export default function InquiryDetailPage() {
                     size="sm"
                     className="gap-2"
                     onClick={() => setIsEditing(true)}
+                    disabled={isAnswered}
                   >
                     <Pencil className="w-4 h-4" />
                     수정
@@ -161,6 +176,7 @@ export default function InquiryDetailPage() {
                     size="sm"
                     className="gap-2"
                     onClick={async () => {
+                      if (isAnswered) return
                       if (isDeleting) return
                       const confirmed =
                         window.confirm("이 문의를 삭제하시겠습니까?")
@@ -176,6 +192,7 @@ export default function InquiryDetailPage() {
                         setIsDeleting(false)
                       }
                     }}
+                    disabled={isAnswered}
                   >
                     {isDeleting ? (
                       "삭제 중..."
@@ -294,12 +311,20 @@ export default function InquiryDetailPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
-                <h2 className="font-semibold text-foreground">문의 내용</h2>
-                <p className="whitespace-pre-line rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
-                  {data.message || "내용이 없습니다."}
-                </p>
-              </div>
+              <>
+                <div className="space-y-3">
+                  <h2 className="font-semibold text-foreground">문의 내용</h2>
+                  <p className="whitespace-pre-line rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+                    {data.message || "내용이 없습니다."}
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <h2 className="font-semibold text-foreground">답변</h2>
+                  <p className="whitespace-pre-line rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm text-foreground">
+                    {data.inquiryAnswer?.message || "아직 답변이 없습니다."}
+                  </p>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

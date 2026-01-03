@@ -18,21 +18,42 @@ import {
   type EndPointInfoResponse,
   type EndPointRequest,
   type MemberInfoAdminResponse,
-  Role,
-  Status,
+  MemberRole,
+  MemberStatus,
 } from "@/lib/api/admin"
+import {
+  InquiryCategory,
+  type InquiryInfoResponse,
+  type InquiryListResponse,
+  InquiryStatus,
+} from "@/lib/api/inquiry"
 import { type PageResponse } from "@/lib/api-client"
 
-const roleLabels: Record<Role, string> = {
-  [Role.ADMIN]: "관리자",
-  [Role.USER]: "일반",
-  [Role.SELLER]: "판매자",
+const roleLabels: Record<MemberRole, string> = {
+  [MemberRole.ADMIN]: "관리자",
+  [MemberRole.USER]: "일반",
+  [MemberRole.SELLER]: "판매자",
 }
 
-const statusLabels: Record<Status, string> = {
-  [Status.ACTIVE]: "활성",
-  [Status.BANNED]: "차단",
-  [Status.DELETED]: "삭제",
+const statusLabels: Record<MemberStatus, string> = {
+  [MemberStatus.ACTIVE]: "활성",
+  [MemberStatus.BANNED]: "차단",
+  [MemberStatus.DELETED]: "삭제",
+}
+
+const categoryLabels: Record<InquiryCategory, string> = {
+  [InquiryCategory.PRODUCT]: "상품 문의",
+  [InquiryCategory.SUBSCRIPTION]: "구독",
+  [InquiryCategory.SHIPPING]: "배송",
+  [InquiryCategory.PAYMENT]: "결제/환불",
+  [InquiryCategory.ACCOUNT]: "계정/로그인",
+  [InquiryCategory.ETC]: "기타",
+}
+
+const inquiryStatusLabels: Record<InquiryStatus, string> = {
+  [InquiryStatus.RECEIVED]: "접수",
+  [InquiryStatus.IN_PROGRESS]: "처리 중",
+  [InquiryStatus.ANSWERED]: "답변 완료",
 }
 
 const methodOptions = ["GET", "POST", "PUT", "PATCH", "DELETE"]
@@ -47,22 +68,36 @@ const formatDate = (value: string) => {
   return `${year}-${month}-${day}`
 }
 
+const formatDateTime = (value?: string) => {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return `${parsed.toISOString().slice(0, 10)} ${parsed
+    .toISOString()
+    .slice(11, 16)}`
+}
+
 export default function AdminPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [activeSection, setActiveSection] = useState<"members" | "paths">(() =>
-    searchParams?.get("tab") === "paths" ? "paths" : "members"
-  )
+  const [activeSection, setActiveSection] = useState<
+    "members" | "paths" | "inquiries"
+  >(() => {
+    const tab = searchParams?.get("tab")
+    if (tab === "paths" || tab === "inquiries") return tab
+    return "members"
+  })
   const [membersData, setMembersData] =
     useState<PageResponse<MemberInfoAdminResponse> | null>(null)
   const [membersLoading, setMembersLoading] = useState(false)
   const [membersError, setMembersError] = useState<string | null>(null)
   const [membersRefreshKey, setMembersRefreshKey] = useState(0)
-  const [memberStatusOptions, setMemberStatusOptions] = useState<Status[] | null>(
-    null
-  )
+  const [memberPage, setMemberPage] = useState(0)
+  const [memberStatusOptions, setMemberStatusOptions] = useState<
+    MemberStatus[] | null
+  >(null)
   const [memberStatusDrafts, setMemberStatusDrafts] = useState<
-    Record<string, Status>
+    Record<string, MemberStatus>
   >({})
   const [memberActionLoadingId, setMemberActionLoadingId] = useState<
     string | null
@@ -76,22 +111,54 @@ export default function AdminPage() {
   const [editingEndpointId, setEditingEndpointId] = useState<string | null>(
     null
   )
-  const [roleOptions, setRoleOptions] = useState<Role[]>(Object.values(Role))
-  const [endpointRole, setEndpointRole] = useState<Role>(Role.ADMIN)
+  const [roleOptions, setRoleOptions] = useState<MemberRole[]>(
+    Object.values(MemberRole)
+  )
+  const [endpointRole, setEndpointRole] = useState<MemberRole>(MemberRole.ADMIN)
   const [endpointHttpMethod, setEndpointHttpMethod] = useState(
     methodOptions[0]
   )
   const [endpointPathPattern, setEndpointPathPattern] = useState("")
   const [endpointActionLoading, setEndpointActionLoading] = useState(false)
+  const [inquiriesData, setInquiriesData] =
+    useState<PageResponse<InquiryListResponse> | null>(null)
+  const [inquiriesLoading, setInquiriesLoading] = useState(false)
+  const [inquiriesError, setInquiriesError] = useState<string | null>(null)
+  const [inquiriesRefreshKey, setInquiriesRefreshKey] = useState(0)
+  const [inquiryStatusFilter, setInquiryStatusFilter] =
+    useState<InquiryStatus>(InquiryStatus.RECEIVED)
+  const [inquiryPage, setInquiryPage] = useState(0)
+  const [selectedInquiryId, setSelectedInquiryId] = useState<string | null>(
+    null
+  )
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false)
+  const [inquiryDetail, setInquiryDetail] =
+    useState<InquiryInfoResponse | null>(null)
+  const [inquiryDetailLoading, setInquiryDetailLoading] = useState(false)
+  const [inquiryDetailError, setInquiryDetailError] = useState<string | null>(
+    null
+  )
+  const [inquiryDetailRefreshKey, setInquiryDetailRefreshKey] = useState(0)
+  const [answerDraft, setAnswerDraft] = useState("")
+  const [answerSaving, setAnswerSaving] = useState(false)
+  const [answerDeleting, setAnswerDeleting] = useState(false)
 
   const endpointTotalPages = useMemo(
     () => endpointsData?.totalPages ?? 0,
     [endpointsData?.totalPages]
   )
+  const memberTotalPages = useMemo(
+    () => membersData?.totalPages ?? 0,
+    [membersData?.totalPages]
+  )
+  const inquiryTotalPages = useMemo(
+    () => inquiriesData?.totalPages ?? 0,
+    [inquiriesData?.totalPages]
+  )
 
   useEffect(() => {
     const tab = searchParams?.get("tab")
-    if (tab === "members" || tab === "paths") {
+    if (tab === "members" || tab === "paths" || tab === "inquiries") {
       if (tab !== activeSection) setActiveSection(tab)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -103,7 +170,11 @@ export default function AdminPage() {
       setMembersLoading(true)
       setMembersError(null)
       try {
-        const res = await adminApi.getMembers()
+        const res = await adminApi.getMembers({
+          page: memberPage,
+          size: 10,
+          sort: "createdAt,desc",
+        })
         setMembersData(res)
       } catch (err: any) {
         setMembersError(err?.message || "멤버 목록을 불러오지 못했습니다.")
@@ -114,7 +185,7 @@ export default function AdminPage() {
     }
 
     fetchMembers()
-  }, [activeSection, membersRefreshKey])
+  }, [activeSection, membersRefreshKey, memberPage])
 
   useEffect(() => {
     if (activeSection !== "members") return
@@ -137,7 +208,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!membersData?.content) return
-    const nextDrafts: Record<string, Status> = {}
+    const nextDrafts: Record<string, MemberStatus> = {}
     membersData.content.forEach((member) => {
       nextDrafts[member.id] = member.status
     })
@@ -188,14 +259,85 @@ export default function AdminPage() {
     fetchEndpoints()
   }, [activeSection, endpointPage, endpointsRefreshKey])
 
-  const handleSectionChange = (section: "members" | "paths") => {
+  useEffect(() => {
+    if (activeSection !== "inquiries") return
+    const fetchInquiries = async () => {
+      setInquiriesLoading(true)
+      setInquiriesError(null)
+      try {
+        const res = await adminApi.getInquiryListForAdmin({
+          status: inquiryStatusFilter,
+          page: inquiryPage,
+          size: 10,
+          sort: "createdAt,desc",
+        })
+        setInquiriesData(res)
+      } catch (err: any) {
+        setInquiriesError(
+          err?.message || "문의 목록을 불러오지 못했습니다."
+        )
+        setInquiriesData(null)
+      } finally {
+        setInquiriesLoading(false)
+      }
+    }
+
+    fetchInquiries()
+  }, [activeSection, inquiriesRefreshKey, inquiryStatusFilter, inquiryPage])
+
+  useEffect(() => {
+    setInquiryPage(0)
+  }, [inquiryStatusFilter])
+
+  useEffect(() => {
+    if (activeSection !== "inquiries") return
+    if (!inquiriesData?.content?.length) {
+      setSelectedInquiryId(null)
+      return
+    }
+    if (
+      selectedInquiryId &&
+      inquiriesData.content.some((item) => item.id === selectedInquiryId)
+    ) {
+      return
+    }
+    setSelectedInquiryId(inquiriesData.content[0].id)
+  }, [activeSection, inquiriesData, selectedInquiryId])
+
+  useEffect(() => {
+    if (activeSection !== "inquiries" || !selectedInquiryId) {
+      setInquiryDetail(null)
+      setInquiryDetailError(null)
+      return
+    }
+    const fetchInquiryDetail = async () => {
+      setInquiryDetailLoading(true)
+      setInquiryDetailError(null)
+      try {
+        const res = await adminApi.getInquiryInfoForAdmin(selectedInquiryId)
+        setInquiryDetail(res)
+        setAnswerDraft(res.inquiryAnswer?.message ?? "")
+      } catch (err: any) {
+        setInquiryDetailError(
+          err?.message || "문의 상세를 불러오지 못했습니다."
+        )
+        setInquiryDetail(null)
+      } finally {
+        setInquiryDetailLoading(false)
+      }
+    }
+
+    fetchInquiryDetail()
+  }, [activeSection, selectedInquiryId, inquiryDetailRefreshKey])
+
+  const handleSectionChange = (section: "members" | "paths" | "inquiries") => {
     setActiveSection(section)
     router.replace(`/admin?tab=${section}`, { scroll: false })
   }
 
   const resetEndpointForm = () => {
     setEditingEndpointId(null)
-    setEndpointRole(Role.ADMIN)
+    setEndpointRole(MemberRole.ADMIN)
     setEndpointHttpMethod(methodOptions[0])
     setEndpointPathPattern("")
   }
@@ -263,6 +405,47 @@ export default function AdminPage() {
     }
   }
 
+  const handleSaveInquiryAnswer = async () => {
+    if (!selectedInquiryId) return
+    const message = answerDraft.trim()
+    if (!message) return
+    setAnswerSaving(true)
+    setInquiryDetailError(null)
+    try {
+      if (inquiryDetail?.inquiryAnswer) {
+        await adminApi.modifyInquiryAnswer(selectedInquiryId, { message })
+      } else {
+        await adminApi.createInquiryAnswer(selectedInquiryId, { message })
+      }
+      setInquiryDetailRefreshKey((prev) => prev + 1)
+      setInquiriesRefreshKey((prev) => prev + 1)
+    } catch (err: any) {
+      setInquiryDetailError(
+        err?.message || "답변을 저장하지 못했습니다."
+      )
+    } finally {
+      setAnswerSaving(false)
+    }
+  }
+
+  const handleDeleteInquiryAnswer = async () => {
+    if (!selectedInquiryId || !inquiryDetail?.inquiryAnswer) return
+    if (!confirm("답변을 삭제하시겠습니까?")) return
+    setAnswerDeleting(true)
+    setInquiryDetailError(null)
+    try {
+      await adminApi.deleteInquiryAnswer(selectedInquiryId)
+      setInquiryDetailRefreshKey((prev) => prev + 1)
+      setInquiriesRefreshKey((prev) => prev + 1)
+    } catch (err: any) {
+      setInquiryDetailError(
+        err?.message || "답변을 삭제하지 못했습니다."
+      )
+    } finally {
+      setAnswerDeleting(false)
+    }
+  }
+
   return (
     <div className="flex flex-col md:flex-row">
       <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-card">
@@ -288,6 +471,17 @@ export default function AdminPage() {
             }`}
           >
             권한별 URL 관리
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSectionChange("inquiries")}
+            className={`w-full text-left rounded-md px-3 py-2 text-sm font-semibold ${
+              activeSection === "inquiries"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            문의 관리
           </button>
         </nav>
       </aside>
@@ -390,13 +584,13 @@ export default function AdminPage() {
                               onValueChange={(value) =>
                                 setMemberStatusDrafts((prev) => ({
                                   ...prev,
-                                  [member.id]: value as Status,
+                                  [member.id]: value as MemberStatus,
                                 }))
                               }
                               disabled={
                                 memberActionLoadingId === member.id ||
                                 !memberStatusOptions?.length ||
-                                member.status === Status.DELETED
+                                member.status === MemberStatus.DELETED
                               }
                             >
                               <SelectTrigger>
@@ -417,7 +611,7 @@ export default function AdminPage() {
                             disabled={
                               memberActionLoadingId === member.id ||
                               !memberStatusOptions?.length ||
-                              member.status === Status.DELETED ||
+                              member.status === MemberStatus.DELETED ||
                               (memberStatusDrafts[member.id] ?? member.status) ===
                                 member.status
                             }
@@ -435,6 +629,35 @@ export default function AdminPage() {
                   </div>
                 )}
               </CardContent>
+              {membersData && memberTotalPages > 1 && (
+                <CardContent className="flex items-center justify-between pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={memberPage === 0}
+                    onClick={() =>
+                      setMemberPage((prev) => Math.max(prev - 1, 0))
+                    }
+                  >
+                    이전
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {memberPage + 1} / {memberTotalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={memberPage + 1 >= memberTotalPages}
+                    onClick={() =>
+                      setMemberPage((prev) =>
+                        prev + 1 < memberTotalPages ? prev + 1 : prev
+                      )
+                    }
+                  >
+                    다음
+                  </Button>
+                </CardContent>
+              )}
             </Card>
           )}
 
@@ -458,7 +681,7 @@ export default function AdminPage() {
                       <Select
                         value={endpointRole}
                         onValueChange={(value) =>
-                          setEndpointRole(value as Role)
+                          setEndpointRole(value as MemberRole)
                         }
                       >
                         <SelectTrigger>
@@ -591,7 +814,7 @@ export default function AdminPage() {
                                   <Select
                                     value={endpointRole}
                                     onValueChange={(value) =>
-                                      setEndpointRole(value as Role)
+                                      setEndpointRole(value as MemberRole)
                                     }
                                   >
                                     <SelectTrigger>
@@ -732,8 +955,257 @@ export default function AdminPage() {
               </Card>
             </>
           )}
+
+          {activeSection === "inquiries" && (
+            <Card>
+              <CardHeader className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <CardTitle className="text-xl font-bold text-foreground">
+                    문의 관리
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground whitespace-nowrap">
+                    문의 목록 확인 및 답변 등록
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setInquiriesRefreshKey((prev) => prev + 1)}
+                  disabled={inquiriesLoading}
+                >
+                  새로고침
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {inquiriesError && (
+                  <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                    <span>{inquiriesError}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setInquiriesRefreshKey((prev) => prev + 1)}
+                    >
+                      다시 시도
+                    </Button>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        상태 필터
+                      </p>
+                      <Select
+                        value={inquiryStatusFilter}
+                        onValueChange={(value) =>
+                          setInquiryStatusFilter(value as InquiryStatus)
+                        }
+                      >
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="상태 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.values(InquiryStatus).map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {inquiryStatusLabels[status]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {inquiriesLoading && (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {Array.from({ length: 6 }).map((_, idx) => (
+                        <div
+                          key={`inquiry-skeleton-${idx}`}
+                          className="h-24 rounded-lg border border-border/60 bg-muted animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {!inquiriesLoading && inquiriesData?.content?.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-border/70 bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
+                      등록된 문의가 없습니다.
+                    </div>
+                  )}
+                  {!inquiriesLoading && !!inquiriesData?.content?.length && (
+                    <div className="grid gap-3">
+                        {inquiriesData.content.map((inquiry) => (
+                          <button
+                            key={inquiry.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedInquiryId(inquiry.id)
+                              setIsInquiryModalOpen(true)
+                            }}
+                            className="group rounded-lg border border-border bg-card px-4 py-3 text-left transition hover:border-primary/60 hover:shadow-md"
+                          >
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="secondary">
+                                {categoryLabels[inquiry.inquiryCategory]}
+                              </Badge>
+                              <Badge variant="outline">
+                                {inquiryStatusLabels[inquiry.status]}
+                              </Badge>
+                            </div>
+                            <p className="text-base font-semibold text-foreground group-hover:text-primary">
+                              {inquiry.title}
+                            </p>
+                          </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                </div>
+              </CardContent>
+              {inquiriesData && inquiryTotalPages > 1 && (
+                <CardContent className="flex items-center justify-between pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={inquiryPage === 0}
+                    onClick={() =>
+                      setInquiryPage((prev) => Math.max(prev - 1, 0))
+                    }
+                  >
+                    이전
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {inquiryPage + 1} / {inquiryTotalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={inquiryPage + 1 >= inquiryTotalPages}
+                    onClick={() =>
+                      setInquiryPage((prev) =>
+                        prev + 1 < inquiryTotalPages ? prev + 1 : prev
+                      )
+                    }
+                  >
+                    다음
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+          )}
         </div>
       </main>
+
+      {activeSection === "inquiries" && isInquiryModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6"
+          onClick={() => setIsInquiryModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-xl border border-border bg-background shadow-lg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">문의 상세</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {inquiryDetail?.title || "상세 보기"}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsInquiryModalOpen(false)}
+              >
+                닫기
+              </Button>
+            </div>
+            <div className="space-y-4 px-6 py-5">
+              {inquiryDetailError && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  {inquiryDetailError}
+                </div>
+              )}
+              {inquiryDetailLoading && (
+                <div className="space-y-3">
+                  <div className="h-5 w-40 rounded bg-muted animate-pulse" />
+                  <div className="h-24 w-full rounded bg-muted animate-pulse" />
+                  <div className="h-24 w-full rounded bg-muted animate-pulse" />
+                </div>
+              )}
+              {!inquiryDetailLoading && !inquiryDetail && (
+                <div className="rounded-lg border border-dashed border-border/70 bg-muted/40 px-6 py-8 text-center text-sm text-muted-foreground">
+                  선택된 문의가 없습니다.
+                </div>
+              )}
+              {!inquiryDetailLoading && inquiryDetail && (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">
+                      {categoryLabels[inquiryDetail.inquiryCategory]}
+                    </Badge>
+                    <Badge variant="outline">
+                      {inquiryStatusLabels[inquiryDetail.status]}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      작성자: {inquiryDetail.memberId}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      등록 {formatDateTime(inquiryDetail.createdAt)} · 수정{" "}
+                      {formatDateTime(inquiryDetail.modifiedAt)}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-foreground">
+                      문의 내용
+                    </p>
+                    <p className="whitespace-pre-line rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+                      {inquiryDetail.message || "내용이 없습니다."}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-foreground">
+                      답변 작성
+                    </p>
+                    <textarea
+                      value={answerDraft}
+                      onChange={(e) => setAnswerDraft(e.target.value)}
+                      placeholder="답변 내용을 입력하세요."
+                      className="min-h-32 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      disabled={answerSaving || answerDeleting}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleSaveInquiryAnswer}
+                        disabled={
+                          answerSaving || answerDeleting || !answerDraft.trim()
+                        }
+                      >
+                        {inquiryDetail.inquiryAnswer
+                          ? "답변 수정"
+                          : "답변 등록"}
+                      </Button>
+                      {inquiryDetail.inquiryAnswer && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={handleDeleteInquiryAnswer}
+                          disabled={answerSaving || answerDeleting}
+                        >
+                          답변 삭제
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

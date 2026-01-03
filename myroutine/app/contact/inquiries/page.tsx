@@ -17,6 +17,7 @@ import {
   inquiryApi,
   type InquiryListResponse,
   InquiryCategory,
+  InquiryStatus,
 } from "@/lib/api/inquiry"
 import { type PageResponse } from "@/lib/api-client"
 
@@ -32,6 +33,12 @@ const categoryLabels: Record<InquiryCategory, string> = {
 const getCategoryLabel = (category: InquiryCategory | string) =>
   categoryLabels[category as InquiryCategory] ||
   categoryLabels[InquiryCategory.ETC]
+
+const statusLabels: Record<InquiryStatus, string> = {
+  [InquiryStatus.RECEIVED]: "접수",
+  [InquiryStatus.IN_PROGRESS]: "처리 중",
+  [InquiryStatus.ANSWERED]: "답변 완료",
+}
 
 export default function InquiryListPage() {
   const [page, setPage] = useState(0)
@@ -146,12 +153,12 @@ export default function InquiryListPage() {
                         <Badge variant="secondary">
                           {getCategoryLabel(item.inquiryCategory)}
                         </Badge>
+                        <Badge variant="outline">
+                          {statusLabels[item.status]}
+                        </Badge>
                         <h3 className="text-base font-semibold text-foreground group-hover:text-primary">
                           {item.title}
                         </h3>
-                      </div>
-                      <div className="text-right text-xs text-muted-foreground">
-                        <span>ID: {item.id}</span>
                       </div>
                     </div>
                   </article>
