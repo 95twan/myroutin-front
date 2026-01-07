@@ -2,7 +2,7 @@ import { apiClient, PageInfoDto } from "../api-client"
 
 export interface OrderCreateRequest {
   orderType: OrderType
-  subscriptionId?: string
+  subscriptionKey?: string
   recipientName?: string
   recipientAddress?: string
   items: OrderItemRequest[]
@@ -43,7 +43,6 @@ export interface OrderListDetailInfo {
   orderDate: string
   status: OrderStatus
   orderType: OrderType
-  subscriptionId: string
   totalAmount: number
   orderedItems: OrderItemInfo[]
 }

@@ -20,7 +20,9 @@ npm install
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 NEXT_PUBLIC_KAKAO_CLIENT_ID=your_kakao_client_id
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+NEXT_PUBLIC_NAVER_CLIENT_ID=your_naver_client_id
 NEXT_PUBLIC_TOSS_CLIENT_KEY=your_toss_client_key
+NEXT_PUBLIC_S3_BASE_URL=your_s3_url
 ```
 
 ## 개발 서버 실행
