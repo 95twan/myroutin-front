@@ -48,9 +48,9 @@ const normalizeCartItem = (
     price: Number.isFinite(price) ? price : 0,
     quantity: item?.quantity ?? 1,
     thumbnailUrl:
-      getImageUrl(item?.thumbnailUrl) ??
+      getImageUrl(item?.thumbnailKey) ??
       getImageUrl(item?.imgUrl) ??
-      getImageUrl(item?.product?.thumbnailUrl) ??
+      getImageUrl(item?.product?.thumbnailKey) ??
       undefined,
   }
 }

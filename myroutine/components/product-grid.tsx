@@ -130,16 +130,15 @@ export default function ProductGrid({
               : Number.isFinite(rawPrice)
               ? (rawPrice as number)
               : 0
+          const thumbnailKey =
+            "thumbnailKey" in item ? item.thumbnailKey : undefined
 
           return {
             id: id?.toString() || String(idx),
             name: item.name || "이름 없음",
             category: getCategoryLabel(item.category || ""),
             price: Number.isFinite(price) ? price : 0,
-            image:
-              getImageUrl(item.thumbnailUrl) ||
-              getImageUrl((item as any)?.productImage) ||
-              "/placeholder.svg",
+            image: getImageUrl(thumbnailKey) || "/placeholder.svg",
             status: item.status || "ON_SALE",
           }
         })

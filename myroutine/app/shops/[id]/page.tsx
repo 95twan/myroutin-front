@@ -143,7 +143,7 @@ export default function ShopDetailPage() {
     stock: "",
     category: CATEGORY_OPTIONS[0]?.id || "",
     description: "",
-    thumbnailUrl: "",
+    thumbnailKey: "",
     status: ProductStatus.ON_SALE as ProductStatus,
   })
   const loadShopProducts = useCallback(async () => {
@@ -293,7 +293,7 @@ export default function ShopDetailPage() {
         stock: Number(createForm.stock) || 0,
         status: ProductStatus.ON_SALE,
         category: createForm.category,
-        thumbnailUrl: imageUrl || "/placeholder.svg",
+        thumbnailKey: imageUrl || "/placeholder.svg",
       })
       alert("상품이 등록되었습니다.")
       setShowCreateModal(false)
@@ -405,7 +405,7 @@ export default function ShopDetailPage() {
           : product.stock?.toString() || "",
       category: product.category || CATEGORY_OPTIONS[0]?.id || "",
       description: product.description || "",
-      thumbnailUrl: product.thumbnailUrl || "",
+      thumbnailKey: product.thumbnailKey || "",
       status: (product.status as ProductStatus) || ProductStatus.ON_SALE,
     })
     setShowProductModal(true)
@@ -439,8 +439,8 @@ export default function ShopDetailPage() {
         productForm.category !== (selectedProduct.category || "") ||
         (productForm.description?.trim() || "") !==
           (selectedProduct.description || "") ||
-        (productForm.thumbnailUrl || "") !==
-          (selectedProduct.thumbnailUrl || "")
+        (productForm.thumbnailKey || "") !==
+          (selectedProduct.thumbnailKey || "")
 
       // 상태만 바뀐 경우: 상태 API만 호출
       if (!hasInfoChanged && hasStatusChanged) {
@@ -460,7 +460,7 @@ export default function ShopDetailPage() {
           price: Number(productForm.price),
           stock: Number(productForm.stock) || 0,
           category: productForm.category,
-          thumbnailUrl: productForm.thumbnailUrl || "/placeholder.svg",
+          thumbnailKey: productForm.thumbnailKey || "/placeholder.svg",
         })
       }
 
@@ -741,7 +741,7 @@ export default function ShopDetailPage() {
                     >
                     <div className="w-20 h-16 rounded-md bg-muted overflow-hidden">
                       <img
-                        src={getImageUrl(product.thumbnailUrl) || "/placeholder.svg"}
+                        src={getImageUrl(product.thumbnailKey) || "/placeholder.svg"}
                         alt={product.name}
                         className="w-full h-full object-contain bg-white"
                       />
@@ -781,7 +781,7 @@ export default function ShopDetailPage() {
               <div className="md:col-span-2 flex items-center gap-3">
                 <div className="w-24 h-20 rounded-md bg-muted overflow-hidden">
                   <img
-                    src={getImageUrl(productForm.thumbnailUrl) || "/placeholder.svg"}
+                    src={getImageUrl(productForm.thumbnailKey) || "/placeholder.svg"}
                     alt={productForm.name}
                     className="w-full h-full object-contain bg-white"
                   />
@@ -861,17 +861,17 @@ export default function ShopDetailPage() {
               </div>
               <div className="md:col-span-2">
                 <p className="text-sm font-semibold text-foreground mb-1">
-                  대표 이미지 URL
+                  대표 이미지 키
                 </p>
                 <Input
-                  value={productForm.thumbnailUrl}
+                  value={productForm.thumbnailKey}
                   onChange={(e) =>
                     setProductForm((prev) => ({
                       ...prev,
-                      thumbnailUrl: e.target.value,
+                      thumbnailKey: e.target.value,
                     }))
                   }
-                  placeholder="/placeholder.svg"
+                  placeholder="images/example.png"
                 />
               </div>
               <div className="md:col-span-2">

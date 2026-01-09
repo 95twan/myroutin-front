@@ -9,7 +9,7 @@ export interface ProductInfoResponse {
   stock?: number | string
   status?: ProductStatus | string
   category: string
-  thumbnailUrl?: string
+  thumbnailKey?: string
   createdAt?: string
   modifiedAt?: string
 }
@@ -21,7 +21,7 @@ export interface ProductRegisterRequest {
   stock: number
   status: ProductStatus
   category: string
-  thumbnailUrl: string
+  thumbnailKey: string
 }
 
 export interface ProductModifyRequest {
@@ -30,7 +30,7 @@ export interface ProductModifyRequest {
   price: number
   stock: number
   category: string // Todo: enum 으로 변경 고려
-  thumbnailUrl: string
+  thumbnailKey: string
 }
 
 export enum ProductStatus {
@@ -100,7 +100,7 @@ export interface ProductSearchResponse {
   name: string
   category?: string
   price: number | string
-  thumbnailUrl?: string
+  thumbnailKey?: string
   status?: string
   createdAt?: string
   createAt?: string

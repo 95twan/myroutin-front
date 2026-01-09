@@ -55,7 +55,7 @@ export default function ProductDetailPage() {
           ...data,
           id: data.id ?? id,
           price: data.price ?? 0,
-          thumbnailUrl: getImageUrl(data.thumbnailUrl) ?? "/placeholder.svg",
+          thumbnailKey: data.thumbnailKey ?? "",
         })
       } catch (err: any) {
         setError(err?.message || "상품 정보를 불러오지 못했습니다.")
@@ -99,7 +99,7 @@ export default function ProductDetailPage() {
           {
             productId: product.id?.toString() || id,
             name: product.name,
-            imgUrl: product.thumbnailUrl,
+            imgUrl: getImageUrl(product.thumbnailKey) || "/placeholder.svg",
             unitPrice: productPrice,
             quantity,
             totalPrice: productPrice * quantity,
@@ -157,7 +157,7 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="flex items-center justify-center bg-white rounded-lg h-80 lg:h-[480px] lg:sticky lg:top-24 border border-border/60">
             <img
-              src={getImageUrl(product.thumbnailUrl) || "/placeholder.svg"}
+              src={getImageUrl(product.thumbnailKey) || "/placeholder.svg"}
               alt={product.name}
               className="w-full h-full object-contain rounded-lg"
             />
