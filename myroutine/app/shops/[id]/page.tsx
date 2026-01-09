@@ -27,6 +27,7 @@ const PRODUCT_STATUS_OPTIONS = [
 const MAX_IMAGE_BYTES = 1 * 1024 * 1024
 const MAX_IMAGE_DIMENSION = 800
 const JPEG_QUALITY = 0.85
+const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg"])
 
 const loadImage = (file: File) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
@@ -48,11 +49,14 @@ const prepareThumbnail = async (file: File) => {
   const width = img.naturalWidth || img.width
   const height = img.naturalHeight || img.height
   const maxDim = Math.max(width, height)
-  const needsResize = maxDim > MAX_IMAGE_DIMENSION || file.size > MAX_IMAGE_BYTES
+  const type = ALLOWED_IMAGE_TYPES.has(file.type) ? file.type : "image/png"
+  const needsResize =
+    maxDim > MAX_IMAGE_DIMENSION ||
+    file.size > MAX_IMAGE_BYTES ||
+    !ALLOWED_IMAGE_TYPES.has(file.type)
 
   if (!needsResize) return file
 
-  const type = file.type || "image/png"
   const isLossy = type === "image/jpeg" || type === "image/webp"
   let scale = maxDim > MAX_IMAGE_DIMENSION ? MAX_IMAGE_DIMENSION / maxDim : 1
   let quality = isLossy ? JPEG_QUALITY : undefined
@@ -261,7 +265,7 @@ export default function ShopDetailPage() {
     setCreateError(null)
     try {
       const presigned = await sellerProductApi.getPresignedUrl({
-        contentType: thumbnailFile.type || "image/*",
+        contentType: thumbnailFile.type || "image/png",
       })
 
       if (!presigned?.url) {
@@ -271,7 +275,7 @@ export default function ShopDetailPage() {
       const uploadResponse = await fetch(presigned.url, {
         method: "PUT",
         headers: {
-          "Content-Type": thumbnailFile.type || "application/octet-stream",
+          "Content-Type": thumbnailFile.type || "image/png",
         },
         body: thumbnailFile,
       })
@@ -1143,7 +1147,7 @@ export default function ShopDetailPage() {
                 </p>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg"
                   onChange={async (e) => {
                     const file = e.target.files?.[0]
                     if (!file) return
