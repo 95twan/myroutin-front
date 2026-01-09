@@ -87,6 +87,7 @@ export default function WalletChargePage() {
           })
           setStatus("success")
           setMessage(null)
+          router.push("/dashboard?tab=wallet")
         } else {
           await paymentApi.failurePayment({
             paymentKey,

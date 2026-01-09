@@ -510,77 +510,60 @@ export default function WalletTab() {
           </p>
         ) : (
           <div className="space-y-3">
-            {transactions.map((tx) => {
-              const isRefunded =
-                tx.status?.toLowerCase().includes("refund") ?? false
-              return (
-                <div
-                  key={tx.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`p-2 rounded-full ${
-                        tx.type === "deposit"
-                          ? "bg-green-100 text-green-600"
-                          : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {tx.type === "deposit" ? (
-                        <ArrowDown className="w-5 h-5" />
-                      ) : (
-                        <ArrowUp className="w-5 h-5" />
-                      )}
-                    </div>
-                    <div>
-                      <p
-                        className={`font-bold text-foreground ${
-                          isRefunded ? "line-through text-muted-foreground" : ""
-                        }`}
-                      >
-                        {tx.description}
-                      </p>
-                      {typeof tx.balanceAfter === "number" && (
-                        <p className="text-xs text-muted-foreground">
-                          {tx.type === "withdraw" ? "출금 후" : "입금 후"} 잔액 ₩
-                          {tx.balanceAfter.toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {tx.status && (
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold border ${getPaymentStatusBadge(
-                          tx.status
-                        )}`}
-                      >
-                        {tx.status}
-                      </span>
+            {transactions.map((tx) => (
+              <div
+                key={tx.id}
+                className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`p-2 rounded-full ${
+                      tx.type === "deposit"
+                        ? "bg-green-100 text-green-600"
+                        : "bg-red-100 text-red-600"
+                    }`}
+                  >
+                    {tx.type === "deposit" ? (
+                      <ArrowDown className="w-5 h-5" />
+                    ) : (
+                      <ArrowUp className="w-5 h-5" />
                     )}
-                    <div className="flex items-center gap-2">
-                      <p
-                        className={`font-bold text-lg ${
-                          isRefunded
-                            ? "text-muted-foreground line-through"
-                            : tx.type === "deposit"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {tx.type === "deposit" ? "+" : "-"}₩
-                        {tx.amount.toLocaleString()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">{tx.description}</p>
+                    {typeof tx.balanceAfter === "number" && (
+                      <p className="text-xs text-muted-foreground">
+                        {tx.type === "withdraw" ? "출금 후" : "입금 후"} 잔액 ₩
+                        {tx.balanceAfter.toLocaleString()}
                       </p>
-                      {isRefunded && (
-                        <span className="text-sm font-semibold text-green-600">
-                          +₩{tx.amount.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-              )
-            })}
+                <div className="flex items-center gap-3">
+                  {tx.status && (
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold border ${getPaymentStatusBadge(
+                        tx.status
+                      )}`}
+                    >
+                      {tx.status}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={`font-bold text-lg ${
+                        tx.type === "deposit"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {tx.type === "deposit" ? "+" : "-"}₩
+                      {tx.amount.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
             <div className="flex items-center justify-center gap-4 pt-4">
               <Button
                 variant="outline"
