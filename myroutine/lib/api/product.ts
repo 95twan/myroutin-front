@@ -89,7 +89,7 @@ export const sellerProductApi = {
     apiClient.delete(`/catalog-service/api/v1/seller/products/${productId}`),
   getPresignedUrl: (data: ProductPresignedRequest) =>
     apiClient.post<ProductPresignedResponse>(
-      `/catalog-service/api/v1/seller/products/images/presigned-urls`,
+      `/catalog-service/api/v1/seller/products/images/presigned-url`,
       data
     ),
 }
