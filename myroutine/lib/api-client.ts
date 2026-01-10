@@ -38,6 +38,7 @@ class ApiClient {
   private baseUrl: string
   private accessToken: string | null = null
   private isRefreshing = false
+  private refreshPromise: Promise<{ token: string | null; shouldLogout: boolean }> | null = null
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
@@ -61,45 +62,56 @@ class ApiClient {
     localStorage.setItem(key, value)
   }
 
-  private async refreshAccessToken(): Promise<string | null> {
-    if (this.isRefreshing) return null
-    if (typeof window === "undefined") return null
+  private async refreshAccessToken(): Promise<{
+    token: string | null
+    shouldLogout: boolean
+  }> {
+    if (this.refreshPromise) return this.refreshPromise
+    if (typeof window === "undefined") return { token: null, shouldLogout: false }
     const refreshToken = this.getStoredToken("refreshToken")
-    if (!refreshToken) return null
+    if (!refreshToken) return { token: null, shouldLogout: true }
 
     this.isRefreshing = true
-    try {
-      const response = await fetch(
-        `${this.baseUrl}/member-service/api/v1/auth/refresh-token`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ refreshToken }),
+    this.refreshPromise = (async () => {
+      try {
+        const response = await fetch(
+          `${this.baseUrl}/member-service/api/v1/auth/refresh-token`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refreshToken }),
+          }
+        )
+
+        const text = await response.text()
+        const data = text ? JSON.parse(text) : null
+
+        if (!response.ok || !data?.accessToken) {
+          return {
+            token: null,
+            shouldLogout: response.status === 401 || response.status === 403,
+          }
         }
-      )
 
-      const text = await response.text()
-      const data = text ? JSON.parse(text) : null
+        this.setAccessToken(data.accessToken)
+        this.setStoredToken("accessToken", data.accessToken)
+        if (data.refreshToken) {
+          this.setStoredToken("refreshToken", data.refreshToken)
+        }
 
-      if (!response.ok || !data?.accessToken) {
-        return null
+        return { token: data.accessToken, shouldLogout: false }
+      } catch (err) {
+        console.error(err)
+        return { token: null, shouldLogout: false }
+      } finally {
+        this.isRefreshing = false
+        this.refreshPromise = null
       }
+    })()
 
-      this.setAccessToken(data.accessToken)
-      this.setStoredToken("accessToken", data.accessToken)
-      if (data.refreshToken) {
-        this.setStoredToken("refreshToken", data.refreshToken)
-      }
-
-      return data.accessToken
-    } catch (err) {
-      console.error(err)
-      return null
-    } finally {
-      this.isRefreshing = false
-    }
+    return this.refreshPromise
   }
 
   private async request<T>(
@@ -163,13 +175,13 @@ class ApiClient {
         PUBLIC_GET_ENDPOINTS.some((matcher) => matcher(endpoint))
 
       if (response.status === 401 && !hasRetried) {
-        const newToken = await this.refreshAccessToken()
+        const { token: newToken, shouldLogout } = await this.refreshAccessToken()
         hasRetried = true
         if (newToken) {
           token = newToken
           continue
         }
-        if (!isPublicGet) {
+        if (shouldLogout && !isPublicGet) {
           this.handleUnauthorized()
         }
       }
