@@ -11,6 +11,7 @@ import {
   OrderType,
 } from "@/lib/api/order"
 import { getImageUrl } from "@/lib/image"
+import { reviewApi } from "@/lib/api/review"
 
 const formatDate = (value: string) => {
   if (!value) return value
@@ -37,6 +38,18 @@ export default function OrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isActionLoading, setIsActionLoading] = useState(false)
+  const [reviewForms, setReviewForms] = useState<
+    Record<
+      string,
+      {
+        rating: number
+        body: string
+        isSubmitting: boolean
+        error: string | null
+        success: boolean
+      }
+    >
+  >({})
 
   useEffect(() => {
     if (!orderId) return
@@ -91,6 +104,64 @@ export default function OrderDetailPage() {
   const canRefund =
     order?.status === OrderStatus.DELIVERY_ING ||
     order?.status === OrderStatus.DELIVERY_COMPLETED
+  const canWriteReview = order?.status === OrderStatus.CONFIRMED
+
+  const getReviewForm = (productId: string) =>
+    reviewForms[productId] ?? {
+      rating: 0,
+      body: "",
+      isSubmitting: false,
+      error: null,
+      success: false,
+    }
+
+  const updateReviewForm = (
+    productId: string,
+    updates: Partial<{
+      rating: number
+      body: string
+      isSubmitting: boolean
+      error: string | null
+      success: boolean
+    }>
+  ) => {
+    setReviewForms((prev) => ({
+      ...prev,
+      [productId]: { ...getReviewForm(productId), ...updates },
+    }))
+  }
+
+  const handleSubmitReview = async (productId: string) => {
+    if (!order?.orderId) return
+    const form = getReviewForm(productId)
+    if (form.rating < 1 || form.rating > 5) {
+      updateReviewForm(productId, { error: "별점을 선택해주세요." })
+      return
+    }
+    if (!form.body.trim()) {
+      updateReviewForm(productId, { error: "리뷰 내용을 입력해주세요." })
+      return
+    }
+
+    updateReviewForm(productId, { isSubmitting: true, error: null })
+    try {
+      await reviewApi.createReview({
+        productId,
+        orderId: order.orderId,
+        rating: form.rating,
+        body: form.body.trim(),
+      })
+      updateReviewForm(productId, {
+        isSubmitting: false,
+        success: true,
+      })
+    } catch (err: any) {
+      updateReviewForm(productId, {
+        isSubmitting: false,
+        error: err?.message || "리뷰 등록에 실패했습니다.",
+      })
+    }
+  }
 
   const handleCancel = async () => {
     if (!order?.orderId) return
@@ -173,26 +244,95 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="border-t border-border pt-4 space-y-3">
-          {orderedItems.map((item) => (
-            <div key={item.productId} className="flex items-center gap-4">
-              <img
-                src={getImageUrl(item.imgUrl) || "/placeholder.svg"}
-                alt={item.productName}
-                className="w-16 h-16 rounded-md object-contain bg-white"
-              />
-              <div className="flex-1">
-                <p className="font-semibold text-foreground">
-                  {item.productName}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  수량 {item.quantity}개 • ₩{item.unitPrice.toLocaleString()}
-                </p>
+          {orderedItems.map((item) => {
+            const form = getReviewForm(item.productId)
+            return (
+              <div key={item.productId} className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={getImageUrl(item.imgUrl) || "/placeholder.svg"}
+                    alt={item.productName}
+                    className="w-16 h-16 rounded-md object-contain bg-white"
+                  />
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground">
+                      {item.productName}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      수량 {item.quantity}개 • ₩{item.unitPrice.toLocaleString()}
+                    </p>
+                  </div>
+                  <p className="font-bold text-foreground">
+                    ₩{item.totalPrice.toLocaleString()}
+                  </p>
+                </div>
+
+                {canWriteReview && (
+                  <div className="rounded-lg border border-border/60 p-4 space-y-3 bg-muted/20">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-foreground">
+                        별점
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }, (_, index) => {
+                          const ratingValue = index + 1
+                          const isActive = ratingValue <= form.rating
+                          return (
+                            <button
+                              key={`rating-${item.productId}-${ratingValue}`}
+                              type="button"
+                              className={`cursor-pointer text-lg ${
+                                isActive
+                                  ? "text-yellow-500"
+                                  : "text-muted-foreground/40"
+                              }`}
+                              onClick={() =>
+                                updateReviewForm(item.productId, {
+                                  rating: ratingValue,
+                                })
+                              }
+                              disabled={form.isSubmitting || form.success}
+                              aria-label={`별점 ${ratingValue}점`}
+                            >
+                              ★
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <textarea
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      rows={3}
+                      placeholder="리뷰 내용을 입력해주세요."
+                      value={form.body}
+                      onChange={(event) =>
+                        updateReviewForm(item.productId, {
+                          body: event.target.value,
+                        })
+                      }
+                      disabled={form.isSubmitting || form.success}
+                    />
+                    {form.error && (
+                      <p className="text-sm text-destructive">{form.error}</p>
+                    )}
+                    {form.success && (
+                      <p className="text-sm text-emerald-600">
+                        리뷰가 등록되었습니다.
+                      </p>
+                    )}
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={() => handleSubmitReview(item.productId)}
+                        disabled={form.isSubmitting || form.success}
+                      >
+                        {form.isSubmitting ? "등록 중..." : "리뷰 등록"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="font-bold text-foreground">
-                ₩{item.totalPrice.toLocaleString()}
-              </p>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 border-t border-border pt-4">

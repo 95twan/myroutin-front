@@ -15,6 +15,7 @@ import AddressSearchInput from "@/components/address-search-input"
 import { cartApi } from "@/lib/api/cart"
 import { getImageUrl } from "@/lib/image"
 import { requireClientLogin } from "@/lib/auth-guard"
+import { reviewApi, type ReviewDetailInfo, type ReviewStatisticInfo } from "@/lib/api/review"
 
 export default function ProductDetailPage() {
   const router = useRouter()
@@ -31,6 +32,12 @@ export default function ProductDetailPage() {
   const [recipientAddress, setRecipientAddress] = useState("")
   const [recipientAddressDetail, setRecipientAddressDetail] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [reviewStat, setReviewStat] = useState<ReviewStatisticInfo | null>(null)
+  const [reviews, setReviews] = useState<ReviewDetailInfo[]>([])
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [reviewSummary, setReviewSummary] = useState<string | null>(null)
+  const [likingReviewIds, setLikingReviewIds] = useState<Record<string, boolean>>({})
 
   const handleAddToCart = () => {
     if (!product?.id && !id) return
@@ -68,6 +75,44 @@ export default function ProductDetailPage() {
     fetchProduct()
   }, [id])
 
+  useEffect(() => {
+    if (!id) return
+    const fetchReviews = async () => {
+      setReviewLoading(true)
+      setReviewError(null)
+      try {
+        const detailData = await reviewApi.getReviewsDetail(id)
+        setReviews(detailData?.content ?? [])
+        try {
+          const summaryData = await reviewApi.getReviewSummary(id)
+          setReviewSummary(summaryData?.summary ?? null)
+        } catch (summaryErr) {
+          setReviewSummary(null)
+        }
+        try {
+          const statData = await reviewApi.getReviewStatistic(id)
+          setReviewStat(statData)
+        } catch (statErr: any) {
+          if (statErr?.status !== 404) {
+            setReviewError(
+              statErr?.message || "리뷰 통계를 불러오지 못했습니다."
+            )
+          }
+          setReviewStat(null)
+        }
+      } catch (err: any) {
+        setReviewError(err?.message || "리뷰 정보를 불러오지 못했습니다.")
+        setReviewStat(null)
+        setReviews([])
+        setReviewSummary(null)
+      } finally {
+        setReviewLoading(false)
+      }
+    }
+
+    fetchReviews()
+  }, [id])
+
   const toNumber = (value?: number | string) => {
     const num = typeof value === "string" ? Number(value) : value ?? 0
     return Number.isFinite(num) ? num : 0
@@ -75,6 +120,39 @@ export default function ProductDetailPage() {
 
   const productPrice = toNumber(product?.price)
   const displayPrice = (price: number) => `₩${price.toLocaleString()}`
+  const renderStars = (rating: number) =>
+    Array.from({ length: 5 }, (_, index) => (
+      <span
+        key={`star-${index}`}
+        className={index < rating ? "text-yellow-500" : "text-muted-foreground/40"}
+      >
+        ★
+      </span>
+    ))
+  const formatDate = (value: string) => {
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value
+    return date.toLocaleDateString("ko-KR")
+  }
+  const totalReviewCount = reviewStat?.reviewCount ?? 0
+  const handleLikeReview = async (reviewId: string) => {
+    if (likingReviewIds[reviewId]) return
+    setLikingReviewIds((prev) => ({ ...prev, [reviewId]: true }))
+    try {
+      await reviewApi.likeReview(reviewId)
+      setReviews((prev) =>
+        prev.map((review) =>
+          review.reviewId === reviewId
+            ? { ...review, likeCount: review.likeCount + 1 }
+            : review
+        )
+      )
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLikingReviewIds((prev) => ({ ...prev, [reviewId]: false }))
+    }
+  }
   const handleOrder = async () => {
     if (!product?.id) {
       setOrderError("상품 정보를 불러올 수 없습니다.")
@@ -281,6 +359,98 @@ export default function ProductDetailPage() {
             {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
           </Card>
         </div>
+        <div className="mt-8">
+          <Card className="p-6 md:p-8 space-y-6">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-2xl font-bold text-foreground">리뷰</h3>
+              {reviewStat ? (
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-foreground">
+                    <span className="text-3xl font-bold text-primary">
+                      {reviewStat.averageRating.toFixed(1)}
+                    </span>
+                    <span className="text-sm">/ 5</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {renderStars(Math.round(reviewStat.averageRating))}
+                  </div>
+                  <span>총 {totalReviewCount}건</span>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  아직 리뷰 통계가 없습니다.
+                </p>
+              )}
+            </div>
+
+            {reviewLoading && (
+              <p className="text-sm text-muted-foreground">
+                리뷰를 불러오는 중입니다...
+              </p>
+            )}
+            {reviewError && (
+              <p className="text-sm text-red-600">{reviewError}</p>
+            )}
+            {!reviewLoading && !reviewError && reviews.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                등록된 리뷰가 없습니다.
+              </p>
+            )}
+            {!reviewLoading && reviews.length > 0 && (
+              <div className="space-y-4">
+                {reviews.map((review, index) => (
+                  <Card
+                    key={
+                      review.reviewId
+                        ? `review-${review.reviewId}`
+                        : `review-${index}`
+                    }
+                    className="p-4 border border-border/60"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-foreground">
+                            {review.nickname || "익명"}
+                          </p>
+                          <div className="flex items-center gap-0.5 text-sm">
+                            {renderStars(review.rating)}
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {formatDate(review.createdAt)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleLikeReview(review.reviewId)}
+                        disabled={likingReviewIds[review.reviewId]}
+                      >
+                        좋아요 {review.likeCount}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-foreground mt-3 leading-relaxed whitespace-pre-line">
+                      {review.body}
+                    </p>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+        {reviewSummary && (
+          <div className="mt-8">
+            <Card className="p-6 md:p-8">
+              <h3 className="text-2xl font-bold text-foreground mb-4">
+                리뷰 요약
+              </h3>
+              <p className="text-foreground leading-relaxed whitespace-pre-line">
+                {reviewSummary}
+              </p>
+            </Card>
+          </div>
+        )}
       </div>
 
       {showOrderModal && (

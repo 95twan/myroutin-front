@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import MyInfoTab from "@/components/dashboard/my-info-tab"
-import WalletTab from "@/components/dashboard/wallet-tab"
+import MyReviewsTab from "@/components/dashboard/my-reviews-tab"
 import OrdersTab from "@/components/dashboard/my-order-tab"
 import SubscriptionsTab from "@/components/dashboard/subscriptions-tab"
 import MyShopsTab from "@/components/dashboard/my-shops-tab"
@@ -37,7 +37,7 @@ export default function DashboardPage() {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid h-auto w-full grid-cols-2 gap-2 md:h-9 md:grid-cols-5 mb-8">
             <TabsTrigger value="info">내 정보</TabsTrigger>
-            <TabsTrigger value="wallet">지갑</TabsTrigger>
+            <TabsTrigger value="reviews">내 리뷰</TabsTrigger>
             <TabsTrigger value="order">내 주문</TabsTrigger>
             <TabsTrigger value="subscriptions">구독 관리</TabsTrigger>
             <TabsTrigger value="shops">내 상점</TabsTrigger>
@@ -47,8 +47,8 @@ export default function DashboardPage() {
             <MyInfoTab />
           </TabsContent>
 
-          <TabsContent value="wallet">
-            <WalletTab />
+          <TabsContent value="reviews">
+            <MyReviewsTab />
           </TabsContent>
 
           <TabsContent value="order">

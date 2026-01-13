@@ -11,6 +11,7 @@ import { Save } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 import { memberApi, type MemberInfoResponse } from "@/lib/api/member"
 import { useRouter } from "next/navigation"
+import WalletTab from "@/components/dashboard/wallet-tab"
 
 type MemberFormState = Pick<
   MemberInfoResponse,
@@ -107,124 +108,134 @@ export default function MyInfoTab() {
   }
 
   return (
-    <Card className="p-6 md:p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-8">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold text-foreground">내 정보</h2>
-        <Button
-          variant={isEditing ? "default" : "outline"}
-          onClick={() => (isEditing ? handleSave() : handleStartEdit())}
-          className="gap-2"
-        >
-          <Save className="w-4 h-4" />
-          {isEditing ? "저장하기" : "수정하기"}
-        </Button>
-      </div>
+        <Card className="p-6 md:p-8">
+          {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-bold text-foreground mb-2">
-            이름
-          </label>
-          <Input
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            disabled={!isEditing || isSaving || isLoading}
-            className="h-10"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-foreground mb-2">
-            이메일
-          </label>
-          <Input
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            disabled
-            className="h-10"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-foreground mb-2">
-            휴대폰 번호
-          </label>
-          <Input
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            disabled={!isEditing || isSaving || isLoading}
-            className="h-10"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-foreground mb-2">
-            배송지 주소
-          </label>
-          {isEditing ? (
-            <>
-              <AddressSearchInput
-                id="address"
-                value={formData.address}
-                onChange={(value) =>
-                  setFormData((prev) => ({ ...prev, address: value }))
-                }
-                disabled={!isEditing || isSaving || isLoading}
-                required
-                readOnly
-              />
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-bold text-foreground">
+                  이름
+                </label>
+                <Button
+                  variant={isEditing ? "default" : "outline"}
+                  onClick={() => (isEditing ? handleSave() : handleStartEdit())}
+                  className="gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {isEditing ? "저장하기" : "수정하기"}
+                </Button>
+              </div>
               <Input
-                id="addressDetail"
-                value={addressDetail}
-                onChange={(e) => setAddressDetail(e.target.value)}
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
                 disabled={!isEditing || isSaving || isLoading}
-                placeholder="상세 주소를 입력하세요"
-                className="h-10 mt-2"
+                className="h-10"
               />
-            </>
-          ) : (
-            <p className="text-sm text-foreground">{formData.address || "-"}</p>
-          )}
-        </div>
+            </div>
 
-        {isEditing && (
-          <div className="flex gap-3 pt-4 border-t border-border">
-            <Button
-              onClick={() => setIsEditing(false)}
-              variant="outline"
-              className="flex-1"
-              disabled={isSaving}
-            >
-              취소
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="flex-1 bg-primary hover:bg-primary/90"
-              disabled={isSaving}
-            >
-              {isSaving ? "저장 중..." : "저장하기"}
-            </Button>
+            <div>
+              <label className="block text-sm font-bold text-foreground mb-2">
+                이메일
+              </label>
+              <Input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled
+                className="h-10"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-foreground mb-2">
+                휴대폰 번호
+              </label>
+              <Input
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                disabled={!isEditing || isSaving || isLoading}
+                className="h-10"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-foreground mb-2">
+                배송지 주소
+              </label>
+              {isEditing ? (
+                <>
+                  <AddressSearchInput
+                    id="address"
+                    value={formData.address}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, address: value }))
+                    }
+                    disabled={!isEditing || isSaving || isLoading}
+                    required
+                    readOnly
+                  />
+                  <Input
+                    id="addressDetail"
+                    value={addressDetail}
+                    onChange={(e) => setAddressDetail(e.target.value)}
+                    disabled={!isEditing || isSaving || isLoading}
+                    placeholder="상세 주소를 입력하세요"
+                    className="h-10 mt-2"
+                  />
+                </>
+              ) : (
+                <p className="text-sm text-foreground">
+                  {formData.address || "-"}
+                </p>
+              )}
+            </div>
+
+            {isEditing && (
+              <div className="flex gap-3 pt-4 border-t border-border">
+                <Button
+                  onClick={() => setIsEditing(false)}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={isSaving}
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "저장 중..." : "저장하기"}
+                </Button>
+              </div>
+            )}
+
+            <div className="pt-6 border-t border-border flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+                onClick={handleDelete}
+                disabled={isDeleting || isSaving || isLoading}
+              >
+                {isDeleting ? "탈퇴 처리 중..." : "회원 탈퇴"}
+              </Button>
+            </div>
           </div>
-        )}
-
-        <div className="pt-6 border-t border-border flex justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            className="border-destructive text-destructive hover:bg-destructive hover:text-white"
-            onClick={handleDelete}
-            disabled={isDeleting || isSaving || isLoading}
-          >
-            {isDeleting ? "탈퇴 처리 중..." : "회원 탈퇴"}
-          </Button>
-        </div>
+        </Card>
       </div>
-    </Card>
+
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-foreground">내 지갑</h2>
+        <WalletTab />
+      </div>
+    </div>
   )
 }
