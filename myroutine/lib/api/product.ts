@@ -1,24 +1,22 @@
 import { apiClient, type PageResponse } from "../api-client"
 
 export interface ProductInfoResponse {
-  id?: string | number
-  shopId?: string | number
+  id: string
+  shopId: string
   name: string
-  description?: string
-  price: number | string
-  stock?: number | string
-  status?: ProductStatus | string
+  description: string
+  price: number
+  status: ProductStatus
   category: string
-  thumbnailKey?: string
-  createdAt?: string
-  modifiedAt?: string
+  thumbnailKey: string
+  createdAt: string
+  modifiedAt: string
 }
 
 export interface ProductRegisterRequest {
   name: string
   description: string
   price: number
-  stock: number
   status: ProductStatus
   category: string
   thumbnailKey: string
@@ -28,7 +26,6 @@ export interface ProductModifyRequest {
   name: string
   description: string
   price: number
-  stock: number
   category: string // Todo: enum 으로 변경 고려
   thumbnailKey: string
 }
@@ -74,14 +71,17 @@ export const sellerProductApi = {
       { params }
     ),
   createProduct: (shopId: string, data: ProductRegisterRequest) =>
-    apiClient.post(
+    apiClient.post<ProductInfoResponse>(
       `/catalog-service/api/v1/seller/shops/${shopId}/products`,
       data
     ),
   updateProduct: (productId: string, data: ProductModifyRequest) =>
-    apiClient.put(`/catalog-service/api/v1/seller/products/${productId}`, data),
+    apiClient.put<ProductInfoResponse>(
+      `/catalog-service/api/v1/seller/products/${productId}`,
+      data
+    ),
   updateProductStatus: (productId: string, status: StatusRequest) =>
-    apiClient.patch(
+    apiClient.patch<ProductInfoResponse>(
       `/catalog-service/api/v1/seller/products/${productId}/status`,
       status
     ),

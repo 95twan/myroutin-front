@@ -11,6 +11,7 @@ import {
   type ProductInfoResponse,
   ProductStatus,
 } from "@/lib/api/product"
+import { inventoryApi } from "@/lib/api/inventory"
 import { settlementApi, type SettlementListDetailInfo } from "@/lib/api/settlement"
 import { Mail, Phone, MapPin, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -137,6 +138,8 @@ export default function ShopDetailPage() {
   const [productModalError, setProductModalError] = useState<string | null>(null)
   const [isSavingProduct, setIsSavingProduct] = useState(false)
   const [isDeletingProduct, setIsDeletingProduct] = useState(false)
+  const [isLoadingInventory, setIsLoadingInventory] = useState(false)
+  const [initialStock, setInitialStock] = useState("")
   const [productForm, setProductForm] = useState({
     name: "",
     price: "",
@@ -286,14 +289,21 @@ export default function ShopDetailPage() {
 
       const imageUrl = presigned.key || presigned.url.split("?")[0] || ""
 
-      await sellerProductApi.createProduct(shop.id, {
+      const createdProduct = await sellerProductApi.createProduct(shop.id, {
         name: createForm.name.trim(),
         description: createForm.description.trim() || " ",
         price: Number(createForm.price),
-        stock: Number(createForm.stock) || 0,
         status: ProductStatus.ON_SALE,
         category: createForm.category,
         thumbnailKey: imageUrl || "/placeholder.svg",
+      })
+      const createdProductId = createdProduct?.id
+      if (!createdProductId) {
+        throw new Error("상품 ID를 받지 못했습니다.")
+      }
+      await inventoryApi.createProductInventory({
+        productId: createdProductId,
+        quantity: Number(createForm.stock) || 0,
       })
       alert("상품이 등록되었습니다.")
       setShowCreateModal(false)
@@ -390,6 +400,25 @@ export default function ShopDetailPage() {
     fetchSettlementHistory(defaultStart, defaultEnd, 0)
   }
 
+  const loadProductInventory = async (productId: string) => {
+    setIsLoadingInventory(true)
+    try {
+      const stock = await inventoryApi.getProductInventory(productId)
+      const quantityValue = Number(stock?.quantity)
+      const quantityString = Number.isFinite(quantityValue)
+        ? quantityValue.toString()
+        : "0"
+      setProductForm((prev) => ({ ...prev, stock: quantityString }))
+      setInitialStock(quantityString)
+    } catch (err: any) {
+      setProductModalError(err?.message || "재고 정보를 불러오지 못했습니다.")
+      setProductForm((prev) => ({ ...prev, stock: "" }))
+      setInitialStock("")
+    } finally {
+      setIsLoadingInventory(false)
+    }
+  }
+
   const openProductModal = (product: ProductInfoResponse) => {
     setSelectedProduct(product)
     setProductModalError(null)
@@ -399,20 +428,21 @@ export default function ShopDetailPage() {
         typeof product.price === "number"
           ? product.price.toString()
           : product.price || "",
-      stock:
-        typeof product.stock === "number"
-          ? product.stock.toString()
-          : product.stock?.toString() || "",
+      stock: "",
       category: product.category || CATEGORY_OPTIONS[0]?.id || "",
       description: product.description || "",
       thumbnailKey: product.thumbnailKey || "",
       status: (product.status as ProductStatus) || ProductStatus.ON_SALE,
     })
     setShowProductModal(true)
+    if (product.id) {
+      loadProductInventory(product.id.toString())
+    }
   }
 
   const handleProductSave = async () => {
     if (!selectedProduct?.id) return
+    if (isLoadingInventory) return
     if (!productForm.name.trim()) {
       setProductModalError("상품명을 입력해주세요.")
       return
@@ -432,18 +462,19 @@ export default function ShopDetailPage() {
       const hasInfoChanged =
         productForm.name.trim() !== (selectedProduct.name || "") ||
         Number(productForm.price) !== Number(selectedProduct.price) ||
-        (productForm.stock || "") !==
-          (typeof selectedProduct.stock === "number"
-            ? selectedProduct.stock.toString()
-            : selectedProduct.stock || "") ||
         productForm.category !== (selectedProduct.category || "") ||
         (productForm.description?.trim() || "") !==
           (selectedProduct.description || "") ||
         (productForm.thumbnailKey || "") !==
           (selectedProduct.thumbnailKey || "")
+      const prevStock = Number(initialStock)
+      const nextStock = Number(productForm.stock)
+      const hasStockChanged =
+        (Number.isFinite(nextStock) ? nextStock : 0) !==
+        (Number.isFinite(prevStock) ? prevStock : 0)
 
       // 상태만 바뀐 경우: 상태 API만 호출
-      if (!hasInfoChanged && hasStatusChanged) {
+      if (!hasInfoChanged && hasStatusChanged && !hasStockChanged) {
         await sellerProductApi.updateProductStatus(selectedProduct.id.toString(), {
           status: nextStatus,
         })
@@ -458,9 +489,14 @@ export default function ShopDetailPage() {
           name: productForm.name.trim(),
           description: productForm.description.trim() || " ",
           price: Number(productForm.price),
-          stock: Number(productForm.stock) || 0,
           category: productForm.category,
           thumbnailKey: productForm.thumbnailKey || "/placeholder.svg",
+        })
+      }
+
+      if (hasStockChanged) {
+        await inventoryApi.modifyProductInventory(selectedProduct.id.toString(), {
+          quantity: Number(productForm.stock) || 0,
         })
       }
 
@@ -817,10 +853,11 @@ export default function ShopDetailPage() {
                 <Input
                   type="number"
                   value={productForm.stock}
+                  disabled={isLoadingInventory}
                   onChange={(e) =>
                     setProductForm((prev) => ({ ...prev, stock: e.target.value }))
                   }
-                  placeholder="0"
+                  placeholder={isLoadingInventory ? "불러오는 중..." : "0"}
                   min={0}
                 />
               </div>
@@ -916,7 +953,7 @@ export default function ShopDetailPage() {
               <Button
                 className="flex-1 bg-primary hover:bg-primary/90"
                 onClick={handleProductSave}
-                disabled={isSavingProduct || isDeletingProduct}
+                disabled={isSavingProduct || isDeletingProduct || isLoadingInventory}
               >
                 {isSavingProduct ? "저장 중..." : "저장"}
               </Button>
