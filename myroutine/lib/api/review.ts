@@ -50,9 +50,10 @@ export const reviewApi = {
     apiClient.get<ReviewStatisticInfo>(
       `/support-service/api/v1/reviews/${productId}`
     ),
-  getReviewsDetail: (productId: string) =>
+  getReviewsDetail: (productId: string, orderBy: string) =>
     apiClient.get<PageResponse<ReviewDetailInfo>>(
-      `/support-service/api/v1/reviews/detail/${productId}`
+      `/support-service/api/v1/reviews/detail/${productId}`,
+      { params: { orderBy } }
     ),
   modifyReview: (reviewId: string, data: ReviewModifyRequest) =>
     apiClient.put<ReviewIdInfo>(

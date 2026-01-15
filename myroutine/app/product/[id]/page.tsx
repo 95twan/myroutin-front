@@ -16,6 +16,7 @@ import { cartApi } from "@/lib/api/cart"
 import { getImageUrl } from "@/lib/image"
 import { requireClientLogin } from "@/lib/auth-guard"
 import { reviewApi, type ReviewDetailInfo, type ReviewStatisticInfo } from "@/lib/api/review"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function ProductDetailPage() {
   const router = useRouter()
@@ -38,6 +39,7 @@ export default function ProductDetailPage() {
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [reviewSummary, setReviewSummary] = useState<string | null>(null)
   const [likingReviewIds, setLikingReviewIds] = useState<Record<string, boolean>>({})
+  const [reviewOrderBy, setReviewOrderBy] = useState<"latest" | "recomended">("latest")
 
   const handleAddToCart = () => {
     if (!product?.id && !id) return
@@ -81,7 +83,8 @@ export default function ProductDetailPage() {
       setReviewLoading(true)
       setReviewError(null)
       try {
-        const detailData = await reviewApi.getReviewsDetail(id)
+        const orderBy = reviewOrderBy === "recomended" ? "recomended" : "latest"
+        const detailData = await reviewApi.getReviewsDetail(id, orderBy)
         setReviews(detailData?.content ?? [])
         try {
           const summaryData = await reviewApi.getReviewSummary(id)
@@ -111,7 +114,7 @@ export default function ProductDetailPage() {
     }
 
     fetchReviews()
-  }, [id])
+  }, [id, reviewOrderBy])
 
   const toNumber = (value?: number | string) => {
     const num = typeof value === "string" ? Number(value) : value ?? 0
@@ -373,26 +376,40 @@ export default function ProductDetailPage() {
         )}
         <div className="mt-8">
           <Card className="p-6 md:p-8 space-y-6">
-            <div className="flex flex-col gap-2">
-              <h3 className="text-2xl font-bold text-foreground">리뷰</h3>
-              {reviewStat ? (
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2 text-foreground">
-                    <span className="text-3xl font-bold text-primary">
-                      {reviewStat.averageRating.toFixed(1)}
-                    </span>
-                    <span className="text-sm">/ 5</span>
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-2xl font-bold text-foreground">리뷰</h3>
+                {reviewStat ? (
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-foreground">
+                      <span className="text-3xl font-bold text-primary">
+                        {reviewStat.averageRating.toFixed(1)}
+                      </span>
+                      <span className="text-sm">/ 5</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {renderStars(Math.round(reviewStat.averageRating))}
+                    </div>
+                    <span>총 {totalReviewCount}건</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {renderStars(Math.round(reviewStat.averageRating))}
-                  </div>
-                  <span>총 {totalReviewCount}건</span>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  아직 리뷰 통계가 없습니다.
-                </p>
-              )}
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    아직 리뷰 통계가 없습니다.
+                  </p>
+                )}
+              </div>
+              <Tabs
+                value={reviewOrderBy}
+                onValueChange={(value) =>
+                  setReviewOrderBy(value as "latest" | "recomended")
+                }
+                className="w-full md:w-auto"
+              >
+                <TabsList className="grid w-full grid-cols-2 md:w-auto">
+                  <TabsTrigger value="latest">최신순</TabsTrigger>
+                  <TabsTrigger value="recomended">추천순</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
 
             {reviewLoading && (
