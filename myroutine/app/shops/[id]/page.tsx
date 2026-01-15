@@ -301,8 +301,7 @@ export default function ShopDetailPage() {
       if (!createdProductId) {
         throw new Error("상품 ID를 받지 못했습니다.")
       }
-      await inventoryApi.createProductInventory({
-        productId: createdProductId,
+      await inventoryApi.modifyProductInventory(createdProductId.toString(), {
         quantity: Number(createForm.stock) || 0,
       })
       alert("상품이 등록되었습니다.")
