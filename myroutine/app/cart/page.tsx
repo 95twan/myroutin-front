@@ -80,6 +80,9 @@ export default function CartPage() {
     null
   )
   const [recommendationLoading, setRecommendationLoading] = useState(false)
+  const [addingRecommendedIds, setAddingRecommendedIds] = useState<
+    Record<string, boolean>
+  >({})
   // const [products, setProducts] = useState<Record<string, ProductInfoResponse>>({})
   // const [isLoading, setIsLoading] = useState(true)
   // const [error, setError] = useState<string | null>(null)
@@ -279,6 +282,39 @@ export default function CartPage() {
       setItems(previousItems)
       setSelectedIds(previousSelectedIds)
       setCartError("장바구니를 비우지 못했습니다.")
+    }
+  }
+
+  const handleAddRecommended = async (product: ProductInfoResponse) => {
+    if (addingRecommendedIds[product.id]) return
+    setAddingRecommendedIds((prev) => ({ ...prev, [product.id]: true }))
+    setCartError(null)
+    try {
+      const added = await cartApi.addCartItem({
+        productId: product.id,
+        quantity: 1,
+      })
+      const normalized = normalizeCartItem(added)
+      if (normalized) {
+        setItems((prev) => {
+          const existing = prev.find(
+            (item) => item.productId === normalized.productId
+          )
+          if (existing) {
+            return prev.map((item) =>
+              item.productId === normalized.productId
+                ? { ...item, quantity: normalized.quantity, id: normalized.id }
+                : item
+            )
+          }
+          return [...prev, normalized]
+        })
+      }
+    } catch (error) {
+      console.error("추천 상품 담기 실패", error)
+      setCartError("추천 상품을 장바구니에 담지 못했습니다.")
+    } finally {
+      setAddingRecommendedIds((prev) => ({ ...prev, [product.id]: false }))
     }
   }
 
@@ -493,12 +529,14 @@ export default function CartPage() {
                 {recommendedProducts.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {recommendedProducts.map((product) => (
-                      <Link
+                      <div
                         key={product.id}
-                        href={`/product/${product.id}`}
-                        className="group"
+                        className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 transition hover:border-primary/60 hover:shadow-md"
                       >
-                        <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 transition hover:border-primary/60 hover:shadow-md">
+                        <Link
+                          href={`/product/${product.id}`}
+                          className="group flex items-center gap-3 flex-1 min-w-0"
+                        >
                           <div className="w-16 h-16 bg-white rounded-md border border-border/60 overflow-hidden">
                             <img
                               src={
@@ -517,8 +555,16 @@ export default function CartPage() {
                               ₩{product.price.toLocaleString()}
                             </p>
                           </div>
-                        </div>
-                      </Link>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAddRecommended(product)}
+                          disabled={addingRecommendedIds[product.id]}
+                        >
+                          담기
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 )}
