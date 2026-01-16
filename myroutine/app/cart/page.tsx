@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Minus, Plus, Trash2, X } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -83,6 +83,7 @@ export default function CartPage() {
   const [addingRecommendedIds, setAddingRecommendedIds] = useState<
     Record<string, boolean>
   >({})
+  const hasFetchedRecommendations = useRef(false)
   // const [products, setProducts] = useState<Record<string, ProductInfoResponse>>({})
   // const [isLoading, setIsLoading] = useState(true)
   // const [error, setError] = useState<string | null>(null)
@@ -130,10 +131,13 @@ export default function CartPage() {
     )
   }, [items])
 
-  const recommendationSize = 5
+  const recommendationSize = 4
 
   useEffect(() => {
+    if (isLoading || hasFetchedRecommendations.current) return
+
     let cancelled = false
+    hasFetchedRecommendations.current = true
 
     const fetchRecommendations = async () => {
       const cartProductIds = items.map((item) => item.productId)
@@ -193,7 +197,7 @@ export default function CartPage() {
     return () => {
       cancelled = true
     }
-  }, [items, recommendationSize])
+  }, [isLoading, items, recommendationSize])
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
