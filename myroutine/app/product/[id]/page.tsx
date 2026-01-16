@@ -48,6 +48,9 @@ export default function ProductDetailPage() {
   const [reviewOrderBy, setReviewOrderBy] = useState<"latest" | "recommended">(
     "latest"
   )
+  const [reviewPage, setReviewPage] = useState(0)
+  const [reviewTotalPages, setReviewTotalPages] = useState(0)
+  const reviewPageSize = 5
 
   const handleAddToCart = () => {
     if (!product?.id && !id) return
@@ -87,6 +90,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (!id) return
+    setReviewPage(0)
     const fetchReviewMeta = async () => {
       setReviewError(null)
       try {
@@ -117,18 +121,25 @@ export default function ProductDetailPage() {
       try {
         const orderBy =
           reviewOrderBy === "recommended" ? "recommended" : "latest"
-        const detailData = await reviewApi.getReviewsDetail(id, orderBy)
+        const detailData = await reviewApi.getReviewsDetail(
+          id,
+          orderBy,
+          reviewPage,
+          reviewPageSize
+        )
         setReviews(detailData?.content ?? [])
+        setReviewTotalPages(detailData?.totalPages ?? 0)
       } catch (err: any) {
         setReviewError(err?.message || "리뷰 정보를 불러오지 못했습니다.")
         setReviews([])
+        setReviewTotalPages(0)
       } finally {
         setReviewLoading(false)
       }
     }
 
     fetchReviews()
-  }, [id, reviewOrderBy])
+  }, [id, reviewOrderBy, reviewPage, reviewPageSize])
 
   const toNumber = (value?: number | string) => {
     const num = typeof value === "string" ? Number(value) : value ?? 0
@@ -416,9 +427,10 @@ export default function ProductDetailPage() {
               </div>
               <Tabs
                 value={reviewOrderBy}
-                onValueChange={(value) =>
+                onValueChange={(value) => {
                   setReviewOrderBy(value as "latest" | "recommended")
-                }
+                  setReviewPage(0)
+                }}
                 className="w-full md:w-auto"
               >
                 <TabsList className="grid w-full grid-cols-2 md:w-auto">
@@ -480,6 +492,35 @@ export default function ProductDetailPage() {
                     </p>
                   </Card>
                 ))}
+              </div>
+            )}
+            {reviewTotalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={reviewPage === 0}
+                  onClick={() =>
+                    setReviewPage((prev) => Math.max(prev - 1, 0))
+                  }
+                >
+                  이전
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {reviewPage + 1} / {reviewTotalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={reviewPage + 1 >= reviewTotalPages}
+                  onClick={() =>
+                    setReviewPage((prev) =>
+                      prev + 1 < reviewTotalPages ? prev + 1 : prev
+                    )
+                  }
+                >
+                  다음
+                </Button>
               </div>
             )}
           </Card>
