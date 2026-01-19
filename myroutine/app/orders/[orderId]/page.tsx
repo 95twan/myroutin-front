@@ -50,6 +50,9 @@ export default function OrderDetailPage() {
       }
     >
   >({})
+  const [reviewStatusByProduct, setReviewStatusByProduct] = useState<
+    Record<string, boolean | null>
+  >({})
 
   useEffect(() => {
     if (!orderId) return
@@ -163,6 +166,50 @@ export default function OrderDetailPage() {
     }
   }
 
+  useEffect(() => {
+    if (!order || !canWriteReview) {
+      setReviewStatusByProduct({})
+      return
+    }
+    const productIds = Array.from(
+      new Set(order.orderedItems.map((item) => item.productId).filter(Boolean))
+    )
+    if (productIds.length === 0) {
+      setReviewStatusByProduct({})
+      return
+    }
+    let isActive = true
+    const fetchReviewStatus = async () => {
+      const entries = await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            const res = await reviewApi.hasMemberReviewedProduct(productId)
+            return [productId, res.reviewed] as [string, boolean]
+          } catch {
+            return [productId, null] as [string, null]
+          }
+        })
+      )
+      if (!isActive) return
+      setReviewStatusByProduct((prev) => {
+        const next = { ...prev }
+        entries.forEach(([productId, reviewed]) => {
+          next[productId] = reviewed
+        })
+        return next
+      })
+    }
+
+    fetchReviewStatus()
+
+    return () => {
+      isActive = false
+    }
+  }, [order, canWriteReview])
+
+  const canShowReviewForm = (productId: string) =>
+    canWriteReview && reviewStatusByProduct[productId] === false
+
   const handleCancel = async () => {
     if (!order?.orderId) return
     setIsActionLoading(true)
@@ -267,7 +314,7 @@ export default function OrderDetailPage() {
                   </p>
                 </div>
 
-                {canWriteReview && (
+                {canShowReviewForm(item.productId) && (
                   <div className="rounded-lg border border-border/60 p-4 space-y-3 bg-muted/20">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-foreground">
