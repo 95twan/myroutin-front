@@ -3,7 +3,7 @@ import { apiClient } from "../api-client"
 export interface MemberInfo {
   id: string
   name: string
-  status: string
+  nickname: string
 }
 
 export interface LoginInfoResponse {
@@ -45,6 +45,9 @@ export const persistAuthPayload = (
   const resolvedMemberId = memberInfo?.id || memberId
   if (resolvedMemberId) {
     localStorage.setItem("memberId", resolvedMemberId)
+  }
+  if (memberInfo?.nickname) {
+    localStorage.setItem("memberNickname", memberInfo.nickname)
   }
 
   if (options.emitEvent !== false) {

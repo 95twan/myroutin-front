@@ -101,6 +101,7 @@ export default function MyInfoTab() {
       localStorage.removeItem("accessToken")
       localStorage.removeItem("refreshToken")
       localStorage.removeItem("memberId")
+      localStorage.removeItem("memberNickname")
       window.dispatchEvent(new Event("auth-changed"))
       router.push("/login")
     } catch (err: any) {

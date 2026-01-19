@@ -198,6 +198,7 @@ class ApiClient {
     if (typeof window === "undefined") return
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
+    localStorage.removeItem("memberNickname")
     // Redirect to login when no valid token/refresh is available
     if (window.location.pathname !== "/login") {
       const redirect = encodeURIComponent(

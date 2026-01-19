@@ -16,6 +16,7 @@ export default function Header() {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [memberNickname, setMemberNickname] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const { resolvedTheme, setTheme } = useTheme()
   const [isThemeReady, setIsThemeReady] = useState(false)
@@ -30,7 +31,9 @@ export default function Header() {
 
     const syncAuthState = () => {
       const token = localStorage.getItem("accessToken")
+      const nickname = localStorage.getItem("memberNickname") ?? ""
       setIsLoggedIn(!!token)
+      setMemberNickname(nickname)
       setIsLoading(false)
     }
 
@@ -65,6 +68,7 @@ export default function Header() {
     localStorage.removeItem("accessToken")
     localStorage.removeItem("refreshToken")
     localStorage.removeItem("memberId")
+    localStorage.removeItem("memberNickname")
     window.dispatchEvent(new Event("auth-changed"))
     setIsLoggedIn(false)
     router.push("/")
@@ -226,6 +230,9 @@ export default function Header() {
 
             {!isLoading && isLoggedIn ? (
               <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {memberNickname ? `${memberNickname}님` : "로그인됨"}
+                </span>
                 <Button
                   variant="ghost"
                   size="icon"
