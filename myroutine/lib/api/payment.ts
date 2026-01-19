@@ -12,11 +12,23 @@ export interface PaymentInfo {
   failReason?: string
 }
 
+export interface PaymentRequestInfo {
+  orderId: string
+}
+
+export interface PaymentConfirmInfo {
+  paymentStatus: PaymentStatus
+}
+
 export enum PaymentStatus {
-  READY = "READY",
+  PENDING = "PENDING",
+  PENDING_CONFIRM = "PENDING_CONFIRM",
   CONFIRMED = "CONFIRMED",
-  FAILED = "FAILED",
+  PENDING_CANCEL = "PENDING_CANCEL",
+  WITHDRAW_CONFIRMED = "WITHDRAW_CONFIRMED",
   CANCELED = "CANCELED",
+  PAYMENT_FAILED = "PAYMENT_FAILED",
+  CANCEL_FAILED = "CANCEL_FAILED",
 }
 
 export interface PaymentRequest {
@@ -35,14 +47,12 @@ export interface PaymentCancelRequest {
   amount: string
 }
 
+export interface PaymentCancelInfo {
+  paymentStatus: PaymentStatus
+}
+
 export interface PaymentFailureInfo {
-  id: string
-  orderId: string
-  paymentKey: string
-  errorCode: string
-  errorMessage: string
-  amount: number
-  createdAt: string
+  paymentStatus: PaymentStatus
 }
 
 export interface PaymentFailureRequest {
@@ -57,26 +67,29 @@ export interface PaymentFailureRequest {
 export const paymentApi = {
   getPayments: (page = 0, size = 10, sort = "createdAt,desc") =>
     apiClient.get<PageResponse<PaymentInfo>>(
-      "/billing-service/api/v1/payments",
+      "/payment-service/api/v1/payments",
       {
         params: { page, size, sort },
       }
     ),
   requestPayment: (data: PaymentRequest) =>
-    apiClient.post<PaymentInfo>(
-      "/billing-service/api/v1/payments/request",
+    apiClient.post<PaymentRequestInfo>(
+      "/payment-service/api/v1/payments/request",
       data
     ),
   confirmPayment: (data: PaymentConfirmRequest) =>
-    apiClient.post<PaymentInfo>(
-      "/billing-service/api/v1/payments/confirm",
+    apiClient.post<PaymentConfirmInfo>(
+      "/payment-service/api/v1/payments/confirm",
       data
     ),
   cancelPayment: (data: PaymentCancelRequest) =>
-    apiClient.put<PaymentInfo>("/billing-service/api/v1/payments/cancel", data),
+    apiClient.put<PaymentCancelInfo>(
+      "/payment-service/api/v1/payments/cancel",
+      data
+    ),
   failurePayment: (data: PaymentFailureRequest) =>
     apiClient.post<PaymentFailureInfo>(
-      "/billing-service/api/v1/payments/failure",
+      "/payment-service/api/v1/payments/failure",
       data
     ),
 }

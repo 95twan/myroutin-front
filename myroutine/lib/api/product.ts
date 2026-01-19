@@ -137,14 +137,14 @@ export const searchApi = {
     size?: number
   }) =>
     apiClient.get<PageResponse<ProductSearchResponse>>(
-      "/catalog-service/api/v1/products/search",
+      "/support-service/api/v1/products/search",
       { params }
     ),
 }
 
 export const autocompleteApi = {
   autocomplete: (params: { keyword: string }) =>
-    apiClient.get<string[]>("/catalog-service/api/v1/products/autocomplete", {
+    apiClient.get<string[]>("/support-service/api/v1/products/autocomplete", {
       params,
     }),
 }

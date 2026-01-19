@@ -50,11 +50,21 @@ export interface OrderListDetailInfo {
 
 export interface OrderItemInfo {
   productId: string
+  status: OrderItemStatus
   productName: string
   imgUrl: string
   unitPrice: number
   quantity: number
   totalPrice: number
+}
+
+export enum OrderItemStatus {
+  PAID = "PAID",
+  DELIVERY_ING = "DELIVERY_ING",
+  DELIVERY_COMPLETED = "DELIVERY_COMPLETED",
+  REFUND_PENDING = "REFUND_PENDING",
+  REFUND_COMPLETED = "REFUND_COMPLETED",
+  CONFIRMED = "CONFIRMED",
 }
 
 export interface OrderListInfo {

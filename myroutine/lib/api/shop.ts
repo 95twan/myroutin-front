@@ -30,17 +30,17 @@ export interface ShopModifyRequest {
 export const shopApi = {
   getMyShops: (page = 0, size = 5, sort = "createdAt,desc") =>
     apiClient.get<PageResponse<ShopListResponse>>(
-      "/shop-service/api/v1/shops",
+      "/member-service/api/v1/shops",
       {
         params: { page, size, sort },
       }
     ),
   getMyShopDetail: (id: string) =>
-    apiClient.get<ShopInfoResponse>(`/shop-service/api/v1/shops/${id}`),
+    apiClient.get<ShopInfoResponse>(`/member-service/api/v1/shops/${id}`),
   createShop: (data: ShopRegisterRequest) =>
-    apiClient.post<void>("/shop-service/api/v1/shops", data),
+    apiClient.post<void>("/member-service/api/v1/shops", data),
   modifyShop: (id: string, data: ShopModifyRequest) =>
-    apiClient.put<ShopInfoResponse>(`/shop-service/api/v1/shops/${id}`, data),
+    apiClient.put<ShopInfoResponse>(`/member-service/api/v1/shops/${id}`, data),
   deleteShop: (id: string) =>
-    apiClient.delete<void>(`/shop-service/api/v1/shops/${id}`),
+    apiClient.delete<void>(`/member-service/api/v1/shops/${id}`),
 }

@@ -44,32 +44,32 @@ export interface WalletTransferInfo {
 
 export const walletApi = {
   createWallet: () =>
-    apiClient.post<WalletInfo>(`/billing-service/api/v1/wallets`),
-  getWallet: () => apiClient.get<WalletInfo>(`/billing-service/api/v1/wallets`),
+    apiClient.post<WalletInfo>(`/wallet-service/api/v1/wallets`),
+  getWallet: () => apiClient.get<WalletInfo>(`/wallet-service/api/v1/wallets`),
   getTransactionLogs: (page = 0, size = 10, sort = "createdAt,desc") =>
     apiClient.get<PageResponse<WalletLogInfo>>(
-      `/billing-service/api/v1/wallets/transactions/all`,
+      `/wallet-service/api/v1/wallets/transactions/all`,
       {
         params: { page, size, sort },
       }
     ),
   getDepositLogs: (page = 0, size = 10, sort = "createdAt,desc") =>
     apiClient.get<PageResponse<WalletLogInfo>>(
-      `/billing-service/api/v1/wallets/transactions/deposits`,
+      `/wallet-service/api/v1/wallets/transactions/deposits`,
       {
         params: { page, size, sort },
       }
     ),
   getWithdraws: (page = 0, size = 10, sort = "createdAt,desc") =>
     apiClient.get<PageResponse<WalletLogInfo>>(
-      `/billing-service/api/v1/wallets/transactions/withdraws`,
+      `/wallet-service/api/v1/wallets/transactions/withdraws`,
       {
         params: { page, size, sort },
       }
     ),
   transferWallet: (data: WalletTransferRequest) =>
     apiClient.post<WalletTransferInfo>(
-      `/billing-service/api/v1/wallets/transfer`,
+      `/wallet-service/api/v1/wallets/transfer`,
       data
     ),
 }

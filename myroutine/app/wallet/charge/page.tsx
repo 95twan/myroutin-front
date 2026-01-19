@@ -135,12 +135,10 @@ export default function WalletChargePage() {
     try {
       const toss = await loadTossPayments()
       let orderId = `wallet-charge-${Date.now()}`
-      let paymentKey: string | undefined
       const payment = await paymentApi.requestPayment({
         amount: parsedAmount,
       })
-      orderId = payment?.orderId || payment?.paymentKey || orderId
-      paymentKey = payment?.paymentKey
+      orderId = payment?.orderId || orderId
 
       const successParams = new URLSearchParams({
         payment: "success",
@@ -152,9 +150,6 @@ export default function WalletChargePage() {
         orderId,
         amount: String(parsedAmount),
       })
-      if (paymentKey) {
-        successParams.append("paymentKey", paymentKey)
-      }
 
       await toss.requestPayment("CARD", {
         amount: parsedAmount,

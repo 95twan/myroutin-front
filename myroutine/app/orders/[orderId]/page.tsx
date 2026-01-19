@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import {
   orderApi,
   type OrderDetailInfo,
+  OrderItemStatus,
   OrderStatus,
   OrderType,
 } from "@/lib/api/order"
@@ -107,7 +108,9 @@ export default function OrderDetailPage() {
   const canRefund =
     order?.status === OrderStatus.DELIVERY_ING ||
     order?.status === OrderStatus.DELIVERY_COMPLETED
-  const canWriteReview = order?.status === OrderStatus.CONFIRMED
+  const reviewableItems =
+    orderedItems.filter((item) => item.status === OrderItemStatus.CONFIRMED) ||
+    []
 
   const getReviewForm = (productId: string) =>
     reviewForms[productId] ?? {
@@ -167,12 +170,12 @@ export default function OrderDetailPage() {
   }
 
   useEffect(() => {
-    if (!order || !canWriteReview) {
+    if (!order || reviewableItems.length === 0) {
       setReviewStatusByProduct({})
       return
     }
     const productIds = Array.from(
-      new Set(order.orderedItems.map((item) => item.productId).filter(Boolean))
+      new Set(reviewableItems.map((item) => item.productId).filter(Boolean))
     )
     if (productIds.length === 0) {
       setReviewStatusByProduct({})
@@ -205,10 +208,13 @@ export default function OrderDetailPage() {
     return () => {
       isActive = false
     }
-  }, [order, canWriteReview])
+  }, [order, reviewableItems.length])
 
-  const canShowReviewForm = (productId: string) =>
-    canWriteReview && reviewStatusByProduct[productId] === false
+  const canShowReviewForm = (
+    productId: string,
+    itemStatus?: OrderItemStatus
+  ) => itemStatus === OrderItemStatus.CONFIRMED &&
+    reviewStatusByProduct[productId] === false
 
   const handleCancel = async () => {
     if (!order?.orderId) return
@@ -314,7 +320,7 @@ export default function OrderDetailPage() {
                   </p>
                 </div>
 
-                {canShowReviewForm(item.productId) && (
+                {canShowReviewForm(item.productId, item.status) && (
                   <div className="rounded-lg border border-border/60 p-4 space-y-3 bg-muted/20">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-foreground">
