@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import {
   orderApi,
   type OrderDetailInfo,
-  OrderItemStatus,
   OrderStatus,
   OrderType,
 } from "@/lib/api/order"
@@ -75,9 +74,7 @@ export default function OrderDetailPage() {
   }, [orderId])
 
   const orderedItems = order?.orderedItems || []
-  const reviewableItems =
-    orderedItems.filter((item) => item.status === OrderItemStatus.CONFIRMED) ||
-    []
+  const reviewableItems = orderedItems || []
 
   useEffect(() => {
     if (!order || reviewableItems.length === 0) {
@@ -210,9 +207,8 @@ export default function OrderDetailPage() {
 
   const canShowReviewForm = (
     productId: string,
-    itemStatus?: OrderItemStatus
-  ) => itemStatus === OrderItemStatus.CONFIRMED &&
-    reviewStatusByProduct[productId] === false
+    itemStatus?: string
+  ) => reviewStatusByProduct[productId] === false
 
   const handleCancel = async () => {
     if (!order?.orderId) return

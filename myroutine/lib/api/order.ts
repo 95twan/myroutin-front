@@ -46,7 +46,7 @@ export interface OrderListDetailInfo {
 
 export interface OrderItemInfo {
   productId: string
-  status: OrderItemStatus
+  status: string
   productName: string
   imgUrl: string
   unitPrice: number
