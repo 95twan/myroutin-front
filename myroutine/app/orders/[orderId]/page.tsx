@@ -74,6 +74,52 @@ export default function OrderDetailPage() {
     fetchDetail()
   }, [orderId])
 
+  const orderedItems = order?.orderedItems || []
+  const reviewableItems =
+    orderedItems.filter((item) => item.status === OrderItemStatus.CONFIRMED) ||
+    []
+
+  useEffect(() => {
+    if (!order || reviewableItems.length === 0) {
+      setReviewStatusByProduct({})
+      return
+    }
+    const productIds = Array.from(
+      new Set(reviewableItems.map((item) => item.productId).filter(Boolean))
+    )
+    if (productIds.length === 0) {
+      setReviewStatusByProduct({})
+      return
+    }
+    let isActive = true
+    const fetchReviewStatus = async () => {
+      const entries = await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            const res = await reviewApi.hasMemberReviewedProduct(productId)
+            return [productId, res.reviewed] as [string, boolean]
+          } catch {
+            return [productId, null] as [string, null]
+          }
+        })
+      )
+      if (!isActive) return
+      setReviewStatusByProduct((prev) => {
+        const next = { ...prev }
+        entries.forEach(([productId, reviewed]) => {
+          next[productId] = reviewed
+        })
+        return next
+      })
+    }
+
+    fetchReviewStatus()
+
+    return () => {
+      isActive = false
+    }
+  }, [order, reviewableItems.length])
+
   if (!orderId) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -102,13 +148,8 @@ export default function OrderDetailPage() {
     )
   }
 
-  const orderedItems = order?.orderedItems || []
-
   const canCancel = order?.status === OrderStatus.PAID
   const canRefund = order?.status === OrderStatus.SETTLEMENT_REQUESTED
-  const reviewableItems =
-    orderedItems.filter((item) => item.status === OrderItemStatus.CONFIRMED) ||
-    []
 
   const getReviewForm = (productId: string) =>
     reviewForms[productId] ?? {
@@ -166,47 +207,6 @@ export default function OrderDetailPage() {
       })
     }
   }
-
-  useEffect(() => {
-    if (!order || reviewableItems.length === 0) {
-      setReviewStatusByProduct({})
-      return
-    }
-    const productIds = Array.from(
-      new Set(reviewableItems.map((item) => item.productId).filter(Boolean))
-    )
-    if (productIds.length === 0) {
-      setReviewStatusByProduct({})
-      return
-    }
-    let isActive = true
-    const fetchReviewStatus = async () => {
-      const entries = await Promise.all(
-        productIds.map(async (productId) => {
-          try {
-            const res = await reviewApi.hasMemberReviewedProduct(productId)
-            return [productId, res.reviewed] as [string, boolean]
-          } catch {
-            return [productId, null] as [string, null]
-          }
-        })
-      )
-      if (!isActive) return
-      setReviewStatusByProduct((prev) => {
-        const next = { ...prev }
-        entries.forEach(([productId, reviewed]) => {
-          next[productId] = reviewed
-        })
-        return next
-      })
-    }
-
-    fetchReviewStatus()
-
-    return () => {
-      isActive = false
-    }
-  }, [order, reviewableItems.length])
 
   const canShowReviewForm = (
     productId: string,
