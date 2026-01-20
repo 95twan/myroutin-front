@@ -3,13 +3,8 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ChevronRight } from "lucide-react"
 import { Card } from "@/components/ui/card"
-import {
-  orderApi,
-  type OrderListDetailInfo,
-  OrderStatus,
-} from "@/lib/api/order"
+import { orderApi, type OrderListDetailInfo } from "@/lib/api/order"
 import { getImageUrl } from "@/lib/image"
 
 type OrderCard = {

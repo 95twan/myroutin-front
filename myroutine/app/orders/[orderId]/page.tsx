@@ -105,9 +105,7 @@ export default function OrderDetailPage() {
   const orderedItems = order?.orderedItems || []
 
   const canCancel = order?.status === OrderStatus.PAID
-  const canRefund =
-    order?.status === OrderStatus.DELIVERY_ING ||
-    order?.status === OrderStatus.DELIVERY_COMPLETED
+  const canRefund = order?.status === OrderStatus.SETTLEMENT_REQUESTED
   const reviewableItems =
     orderedItems.filter((item) => item.status === OrderItemStatus.CONFIRMED) ||
     []
