@@ -9,6 +9,7 @@ import AddressSearchInput from "@/components/address-search-input"
 import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
 import { authApi, persistAuthPayload } from "@/lib/api/auth"
+import { normalizePhoneNumber } from "@/lib/phone"
 
 type SignupStep = "email-verify" | "profile"
 
@@ -110,7 +111,7 @@ export default function SignupPage() {
         email,
         name,
         nickname,
-        phoneNumber,
+        phoneNumber: normalizePhoneNumber(phoneNumber),
         address: fullAddress,
       })
 

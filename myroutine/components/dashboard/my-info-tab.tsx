@@ -12,6 +12,7 @@ import { apiClient } from "@/lib/api-client"
 import { memberApi, type MemberInfoResponse } from "@/lib/api/member"
 import { useRouter } from "next/navigation"
 import WalletTab from "@/components/dashboard/wallet-tab"
+import { formatPhoneNumber, normalizePhoneNumber } from "@/lib/phone"
 
 type MemberFormState = Pick<
   MemberInfoResponse,
@@ -75,7 +76,7 @@ export default function MyInfoTab() {
       await memberApi.updateMe({
         name: formData.name,
         nickname: formData.nickname,
-        phoneNumber: formData.phoneNumber,
+        phoneNumber: normalizePhoneNumber(formData.phoneNumber),
         address: fullAddress,
       })
       setIsEditing(false)
@@ -175,7 +176,11 @@ export default function MyInfoTab() {
               </label>
               <Input
                 name="phoneNumber"
-                value={formData.phoneNumber}
+                value={
+                  isEditing
+                    ? formData.phoneNumber
+                    : formatPhoneNumber(formData.phoneNumber)
+                }
                 onChange={handleChange}
                 disabled={!isEditing || isSaving || isLoading}
                 className="h-10"

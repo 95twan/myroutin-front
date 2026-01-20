@@ -17,6 +17,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { walletApi } from "@/lib/api/wallet"
+import { normalizePhoneNumber } from "@/lib/phone"
 import { WalletConsentModal } from "./wallet-consent-modal"
 
 interface Shop {
@@ -107,9 +108,13 @@ export default function MyShopsTab() {
       const fullAddress = shopAddressDetail.trim()
         ? `${formData.shopAddress} ${shopAddressDetail.trim()}`
         : formData.shopAddress
+      const normalizedPhoneNumber = normalizePhoneNumber(
+        formData.shopPhoneNumber
+      )
       await shopApi.createShop({
         ...formData,
         shopAddress: fullAddress,
+        shopPhoneNumber: normalizedPhoneNumber,
       })
 
       await fetchShops(0)

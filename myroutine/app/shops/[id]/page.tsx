@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import AddressSearchInput from "@/components/address-search-input"
 import { CATEGORY_OPTIONS } from "@/lib/categories"
 import { getImageUrl } from "@/lib/image"
+import { formatPhoneNumber, normalizePhoneNumber } from "@/lib/phone"
 
 const PRODUCT_STATUS_OPTIONS = [
   { value: ProductStatus.ON_SALE, label: "판매중" },
@@ -208,17 +209,20 @@ export default function ShopDetailPage() {
       const fullAddress = shopAddressDetail.trim()
         ? `${formData.shopAddress} ${shopAddressDetail.trim()}`
         : formData.shopAddress
+      const normalizedPhoneNumber = normalizePhoneNumber(
+        formData.shopPhoneNumber
+      )
       await shopApi.modifyShop(id, {
         shopName: formData.shopName,
         shopEmail: formData.shopEmail,
-        shopPhoneNumber: formData.shopPhoneNumber,
+        shopPhoneNumber: normalizedPhoneNumber,
         shopAddress: fullAddress,
       })
       const updated = {
         id: shop.id,
         shopName: formData.shopName,
         shopEmail: formData.shopEmail,
-        shopPhoneNumber: formData.shopPhoneNumber,
+        shopPhoneNumber: normalizedPhoneNumber,
         shopAddress: fullAddress,
       }
       setShop(updated)
@@ -557,10 +561,9 @@ export default function ShopDetailPage() {
           <Card className="p-6 md:p-8 space-y-6">
             {isLoading ? (
               <p className="text-muted-foreground">불러오는 중...</p>
-            ) : error ? (
-              <p className="text-red-600">{error}</p>
             ) : (
               <div className="space-y-6">
+                {error && <p className="text-red-600">{error}</p>}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
@@ -724,7 +727,9 @@ export default function ShopDetailPage() {
                         <p className="text-sm text-muted-foreground">연락처</p>
                       </div>
                       <p className="font-semibold text-foreground">
-                        {displayValue(shop?.shopPhoneNumber || "")}
+                        {displayValue(
+                          formatPhoneNumber(shop?.shopPhoneNumber || "")
+                        )}
                       </p>
                     </Card>
                     <Card className="p-4 bg-muted/40 border-border/60">
