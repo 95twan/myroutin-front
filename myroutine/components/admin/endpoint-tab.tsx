@@ -57,7 +57,6 @@ export default function EndpointAdminTab() {
         const res = await memberServiceAdminApi.getEndPoints({
           page: endpointPage,
           size: 10,
-          sort: "createdAt,desc",
         })
         setEndpointsData(res)
       } catch (err: any) {
