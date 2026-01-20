@@ -47,6 +47,11 @@ export interface ReviewStatusInfo {
   reviewed: boolean
 }
 
+export interface ReviewStatusRequest {
+  orderId: string
+  productId: string
+}
+
 export const reviewApi = {
   createReview: (data: ReviewCreateRequest) =>
     apiClient.post<ReviewIdInfo>("/support-service/api/v1/reviews", data),
@@ -82,8 +87,9 @@ export const reviewApi = {
     ),
   likeReview: (reviewId: string) =>
     apiClient.post<void>(`/support-service/api/v1/reviews/${reviewId}/like`),
-  hasMemberReviewedProduct: (productId: string) =>
+  hasMemberReviewedProduct: (productId: string, data: ReviewStatusRequest) =>
     apiClient.get<ReviewStatusInfo>(
-      `/support-service/api/v1/reviews/${productId}/reviewed`
+      `/support-service/api/v1/reviews/${productId}/reviewed`,
+      { body: data }
     ),
 }

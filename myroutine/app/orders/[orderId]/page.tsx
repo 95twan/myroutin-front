@@ -93,7 +93,10 @@ export default function OrderDetailPage() {
       const entries = await Promise.all(
         productIds.map(async (productId) => {
           try {
-            const res = await reviewApi.hasMemberReviewedProduct(productId)
+            const res = await reviewApi.hasMemberReviewedProduct(productId, {
+              orderId: order.orderId,
+              productId,
+            })
             return [productId, res.reviewed] as [string, boolean]
           } catch {
             return [productId, null] as [string, null]
