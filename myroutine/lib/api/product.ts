@@ -116,7 +116,7 @@ export interface ProductSearchResponse {
   thumbnailKey?: string
   status?: string
   createdAt?: string
-  createAt?: string
+  isSponsored?: boolean
 }
 
 export enum ProductSearchSort {

@@ -29,6 +29,7 @@ type ProductCardItem = {
   price: number
   image: string
   status: string
+  isSponsored: boolean
 }
 
 type ProductListResult =
@@ -132,6 +133,8 @@ export default function ProductGrid({
               : 0
           const thumbnailKey =
             "thumbnailKey" in item ? item.thumbnailKey : undefined
+          const isSponsored =
+            "isSponsored" in item ? Boolean(item.isSponsored) : false
 
           return {
             id: id?.toString() || String(idx),
@@ -140,9 +143,17 @@ export default function ProductGrid({
             price: Number.isFinite(price) ? price : 0,
             image: getImageUrl(thumbnailKey) || "/placeholder.svg",
             status: item.status || "ON_SALE",
+            isSponsored,
           }
         })
-        setProducts(normalized)
+        const sorted =
+          shouldUseSearchApi && normalized.length > 1
+            ? [...normalized].sort((a, b) => {
+                if (a.isSponsored === b.isSponsored) return 0
+                return a.isSponsored ? -1 : 1
+              })
+            : normalized
+        setProducts(sorted)
         setTotalPages(
           data &&
             !Array.isArray(data) &&

@@ -11,6 +11,7 @@ interface ProductCardProps {
     price: number
     image: string
     status: string
+    isSponsored: boolean
   }
 }
 
@@ -20,6 +21,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
         {/* Image */}
         <div className="relative w-full h-64 bg-white overflow-hidden flex items-center justify-center border-b border-border/50">
+          {product.isSponsored && (
+            <span className="absolute left-3 top-3 z-10 rounded-full bg-amber-400/90 px-2.5 py-1 text-[11px] font-bold text-amber-950 shadow">
+              SPONSORED
+            </span>
+          )}
           <img
             src={product.image || "/placeholder.svg"}
             alt={product.name}
