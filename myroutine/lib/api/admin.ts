@@ -111,58 +111,46 @@ export const memberServiceAdminApi = {
     ),
 }
 
-export enum batchStatus {
-  COMPLETED = "COMPLETED",
-  STARTING = "STARTING",
-  STARTED = "STARTED",
-  STOPPING = "STOPPING",
-  STOPPED = "STOPPED",
-  FAILED = "FAILED",
-  ABANDONED = "ABANDONED",
-  UNKNOWN = "UNKNOWN",
-}
-
-export interface ReviewSummaryExecutionListResponse {
+export interface BatchExecutionRow {
   executionId: number
-  batchStatus: batchStatus
+  jobName: string
+  status: string
   startTime: string
   endTime: string
+  exitCode: string
 }
 
-export interface ReviewSummaryExecutionInfoResponse {
+export interface BatchExecutionWithSteps {
   executionId: number
-  batchStatus: batchStatus
+  jobName: string
+  status: string
   startTime: string
   endTime: string
-  failureExceptions: string[]
-  steps: StepExecutionResponse[]
+  exitCode: string
+  steps: BatchStepExecutionRow[]
 }
 
-export interface StepExecutionResponse {
+export interface BatchStepExecutionRow {
   stepName: string
-  batchStatus: batchStatus
+  status: string
   readCount: number
   writeCount: number
-  skipCount: number
-  failureExceptions: string[]
-}
-
-export interface JobExecutionResponse {
-  executionId: number
+  filterCount: number
+  commitCount: number
+  rollbackCount: number
+  exitMessage: string
 }
 
 export const reviewSummaryServiceAdminApi = {
-  getExecutions: (page: number, size: number) =>
-    apiClient.get<ReviewSummaryExecutionListResponse[]>(
-      `/batch-service/api/v1/admin/review-summary/batch/executions`,
-      { params: { page, size } }
+  getJobNames: () =>
+    apiClient.get<string[]>(`/support-service/api/v1/admin/batch/job-names`),
+  getExecutions: (jobName: string, page: number, size: number) =>
+    apiClient.get<PageResponse<BatchExecutionRow>>(
+      `/support-service/api/v1/admin/batch/executions`,
+      { params: { jobName, page, size } }
     ),
   getExecutionInfo: (executionId: number) =>
-    apiClient.get<ReviewSummaryExecutionInfoResponse>(
-      `/batch-service/api/v1/admin/review-summary/batch/executions/${executionId}`
-    ),
-  restartExecution: (executionId: number) =>
-    apiClient.post<JobExecutionResponse>(
-      `/batch-service/api/v1/admin/review-summary/batch/executions/${executionId}/restart`
+    apiClient.get<BatchExecutionWithSteps>(
+      `/support-service/api/v1/admin/batch/executions/${executionId}`
     ),
 }

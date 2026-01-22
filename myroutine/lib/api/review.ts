@@ -57,7 +57,7 @@ export const reviewApi = {
     apiClient.post<ReviewIdInfo>("/support-service/api/v1/reviews", data),
   getReviewStatistic: (productId: string) =>
     apiClient.get<ReviewStatisticInfo>(
-      `/support-service/api/v1/reviews/${productId}`
+      `/support-service/api/v1/reviews/static/${productId}`
     ),
   getReviewsDetail: (
     productId: string,
