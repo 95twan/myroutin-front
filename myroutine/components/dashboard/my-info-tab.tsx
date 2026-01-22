@@ -73,12 +73,28 @@ export default function MyInfoTab() {
       const fullAddress = addressDetail.trim()
         ? `${formData.address} ${addressDetail.trim()}`
         : formData.address
-      await memberApi.updateMe({
+      const updated = await memberApi.updateMe({
         name: formData.name,
         nickname: formData.nickname,
         phoneNumber: normalizePhoneNumber(formData.phoneNumber),
         address: fullAddress,
       })
+      if (updated) {
+        setFormData({
+          name: updated.name || formData.name,
+          nickname: updated.nickname || formData.nickname,
+          email: updated.email || formData.email,
+          phoneNumber: updated.phoneNumber || formData.phoneNumber,
+          address: updated.address || fullAddress,
+          id: updated.id || formData.id,
+        })
+        if (updated.nickname) {
+          localStorage.setItem("memberNickname", updated.nickname)
+        } else {
+          localStorage.removeItem("memberNickname")
+        }
+        window.dispatchEvent(new Event("auth-changed"))
+      }
       setIsEditing(false)
     } catch (err: any) {
       setError(err?.message || "정보 저장 중 오류가 발생했습니다.")
