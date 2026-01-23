@@ -180,6 +180,8 @@ export default function ProductDetailPage() {
     } catch (err: any) {
       if (err?.code === "REVIEW_008") {
         window.alert(err?.message || "본인의 리뷰는 공감할 수 없습니다.")
+      } else if (err?.code === "REVIEW_006") {
+        window.alert(err?.message || "이미 공감한 리뷰입니다.")
       } else {
         console.error(err)
       }
