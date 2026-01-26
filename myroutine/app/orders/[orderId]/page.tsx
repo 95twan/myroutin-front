@@ -5,13 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  orderApi,
-  type OrderDetailInfo,
-  OrderItemStatus,
-  OrderStatus,
-  OrderType,
-} from "@/lib/api/order"
+import { orderApi, type OrderDetailInfo, OrderType } from "@/lib/api/order"
 import { getImageUrl } from "@/lib/image"
 import { reviewApi } from "@/lib/api/review"
 
@@ -151,8 +145,8 @@ export default function OrderDetailPage() {
   }
 
   const canCancel =
-    order?.status === OrderStatus.PAID &&
-    orderedItems.every((item) => item.status === OrderItemStatus.PAID)
+    order?.status === "PAID" &&
+    orderedItems.every((item) => item.status === "결제완료")
   const shouldShowOrderStatus =
     order?.status === "CANCELED" || order?.status === "PAYMENT_FAILED"
 
@@ -334,8 +328,7 @@ export default function OrderDetailPage() {
                 onClick={() => handleRefund(item.productId)}
                 disabled={isActionLoading}
                 className={`${
-                  item.status === OrderItemStatus.DELIVERY_ING ||
-                  item.status === OrderItemStatus.DELIVERY_COMPLETED
+                  item.status === "배송중" || item.status === "배송완료"
                     ? "inline-flex"
                     : "hidden"
                 }`}
