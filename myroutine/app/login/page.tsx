@@ -29,14 +29,15 @@ export default function LoginPage() {
         )}&response_type=code&scope=email profile&state=${state}`
 
         window.location.href = googleAuthUrl
-      } else if (provider === "naver") {
-        const NAVER_CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID
-        const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_CLIENT_ID}&redirect_uri=${encodeURIComponent(
-          redirectUri
-        )}&state=${state}&auth_type=reauthenticate`
-
-        window.location.href = naverAuthUrl
-      }
+      // NOTE: 네이버 로그인 기능은 현재 비활성화되어 있습니다.
+      // } else if (provider === "naver") {
+      //   const NAVER_CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID
+      //   const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${NAVER_CLIENT_ID}&redirect_uri=${encodeURIComponent(
+      //     redirectUri
+      //   )}&state=${state}&auth_type=reauthenticate`
+      //
+      //   window.location.href = naverAuthUrl
+      // }
     } catch (error) {
       console.error(error)
     } finally {
@@ -86,6 +87,7 @@ export default function LoginPage() {
             >
               {isLoading ? "처리 중..." : "Google로 시작"}
             </Button>
+            {/*
             <Button
               onClick={() => handleOAuthLogin("naver")}
               disabled={isLoading}
@@ -94,6 +96,7 @@ export default function LoginPage() {
             >
               {isLoading ? "처리 중..." : "네이버로 시작"}
             </Button>
+            */}
           </div>
         </div>
       </Card>
