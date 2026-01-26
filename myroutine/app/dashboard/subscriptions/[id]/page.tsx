@@ -285,7 +285,7 @@ export default function SubscriptionDetailPage() {
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-shrink-0">
               <img
-                src={getImageUrl(subscription.thumbnailUrl) || "/placeholder.svg"}
+                src={getImageUrl(subscription.thumbnailKey) || "/placeholder.svg"}
                 alt={subscription.productName}
                 className="w-32 h-32 md:w-40 md:h-40 object-contain rounded-lg bg-white border border-border/60"
               />

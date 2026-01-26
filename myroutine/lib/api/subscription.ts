@@ -14,7 +14,7 @@ export interface SubscriptionInfo {
   id: string
   productId: string
   productName: string
-  thumbnailUrl: string
+  thumbnailKey: string
   subscriptionStatus: SubscriptionStatus
   pricePerItem: number
   quantity: number

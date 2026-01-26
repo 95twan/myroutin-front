@@ -12,7 +12,7 @@ type SubscriptionItem = Partial<
   Pick<
     SubscriptionInfo,
     | "productName"
-    | "thumbnailUrl"
+    | "thumbnailKey"
     | "subscriptionStatus"
     | "pricePerItem"
     | "totalPrice"
@@ -103,7 +103,7 @@ export default function SubscriptionsTab() {
               <div className="flex-shrink-0">
                 <img
                   src={
-                    getImageUrl(sub.thumbnailUrl) ||
+                    getImageUrl(sub.thumbnailKey) ||
                     getImageUrl(sub.productImage) ||
                     "/placeholder.svg"
                   }
